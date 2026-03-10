@@ -168,6 +168,22 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  ::-webkit-scrollbar {
+    height: 4px;
+    width: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--foreground);
+    border-radius: 9999px;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--foreground) transparent;
+  }
 }
 
 @utility font-display {
