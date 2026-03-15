@@ -1,7 +1,6 @@
 import { MobileMenu } from "@/components/shared/MobileMenu";
 import { NavLinks } from "@/components/shared/NavLinks";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { SearchBar } from "@/components/shared/SearchBar";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -28,14 +27,7 @@ export default function MainLayout({
 
         <div className="flex items-center gap-10">
           {/* Search — always visible, responsive width */}
-          <div className="relative w-48 sm:w-64 md:w-80">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/50 pointer-events-none" />
-            <Input
-              type="text"
-              placeholder="Kaj iščeš?"
-              className="pl-9 bg-background border-border rounded-lg text-base placeholder:text-foreground/50"
-            />
-          </div>
+          <SearchBar />
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center">

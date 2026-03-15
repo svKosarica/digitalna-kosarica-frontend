@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "cdn1.interspar.at",
       },
+      {
+        protocol: "https",
+        hostname: "imgproxy-retcat.assets.schwarz",
+      },
     ],
   },
 };
