@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ShoppingBasket } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
 
 const links = [
   { href: "/", label: "Domov" },
@@ -34,6 +35,7 @@ export function NavLinks() {
       <Link href="/basket" className="text-foreground">
         <ShoppingBasket size={22} />
       </Link>
+      <ThemeToggle />
     </div>
   );
 }

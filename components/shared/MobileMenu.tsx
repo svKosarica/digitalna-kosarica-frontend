@@ -12,6 +12,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { ThemeToggle } from "./ThemeToggle";
 
 const links = [
   { href: "/", label: "Domov", icon: Home },
@@ -68,8 +69,8 @@ export function MobileMenu() {
           })}
         </nav>
 
-        {/* Footer — basket */}
-        <div className="px-4 pb-6 border-t border-border pt-4">
+        {/* Footer — basket + theme toggle */}
+        <div className="px-4 pb-6 border-t border-border pt-4 flex flex-col gap-1">
           <Link
             href="/basket"
             onClick={() => setOpen(false)}
@@ -82,6 +83,10 @@ export function MobileMenu() {
             <ShoppingBasket size={18} />
             Košarica
           </Link>
+          <div className="flex items-center gap-3 px-4 py-3 text-foreground/70">
+            <ThemeToggle />
+            <span className="text-base">Tema</span>
+          </div>
         </div>
       </SheetContent>
     </Sheet>

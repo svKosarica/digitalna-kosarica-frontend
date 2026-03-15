@@ -40,7 +40,7 @@ export default function MainLayout({
           </div>
         </div>
       </header>
-      <main className="flex-1 bg-slate-50">{children}</main>
+      <main className="flex-1 bg-background">{children}</main>
     </div>
   );
 }
