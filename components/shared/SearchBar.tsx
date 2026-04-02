@@ -20,7 +20,7 @@ export function SearchBar() {
     <div className="relative w-48 sm:w-64 md:w-80">
       <Search
         size={16}
-        className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/50 pointer-events-none"
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none"
       />
       <Input
         type="text"
@@ -28,7 +28,7 @@ export function SearchBar() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={handleKeyDown}
-        className="pl-9 bg-background border-border rounded-lg text-base placeholder:text-foreground/50"
+        className="pl-9 bg-white border-border rounded-full shadow-none text-base placeholder:text-muted-foreground/50"
       />
     </div>
   );

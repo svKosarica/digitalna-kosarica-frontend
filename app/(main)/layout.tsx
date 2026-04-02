@@ -1,5 +1,3 @@
-import { MobileMenu } from "@/components/shared/MobileMenu";
-import { NavLinks } from "@/components/shared/NavLinks";
 import { SearchBar } from "@/components/shared/SearchBar";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,34 +9,26 @@ export default function MainLayout({
 }) {
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="relative bg-primary rounded-b-lg px-6 h-[60px] flex items-center justify-between">
-        {/* Logo + title */}
-        <Link href="/" className="flex items-center gap-1">
+      <header className="relative bg-sidebar px-6 h-[60px] flex items-center justify-between border-b border-border/20">
+        <Link href="/" className="flex items-center">
           <Image
             src="/images/logo_kosarica.png"
             alt="Digitalna Košarica"
             width={36}
             height={36}
+            className="sm:hidden"
           />
-          <span className="ml-1 hidden sm:inline text-base font-bold text-foreground">
+          <span className="hidden sm:inline text-primary font-black text-xl">
             Digitalna Košarica
           </span>
         </Link>
 
-        <div className="flex items-center gap-10">
-          {/* Search — always visible, responsive width */}
+        <div className="flex-1 flex justify-center sm:justify-end px-4">
           <SearchBar />
-
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center">
-            <NavLinks />
-          </div>
-
-          {/* Mobile: sheet menu */}
-          <div className="md:hidden">
-            <MobileMenu />
-          </div>
         </div>
+        <Link href="/basket" className="text-muted-foreground">
+          <Image src="/Icon.svg" alt="Košarica" width={20} height={20} />
+        </Link>
       </header>
       <main className="flex-1 bg-background">{children}</main>
     </div>

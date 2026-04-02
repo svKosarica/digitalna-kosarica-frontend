@@ -1,6 +1,5 @@
 import "./globals.css";
 import { Inter, Geist_Mono } from "next/font/google";
-import { ThemeProvider } from "@/components/providers/ThemeProvider";
 
 const inter_display = Inter({
   subsets: ["latin"],
@@ -10,7 +9,7 @@ const inter_display = Inter({
 
 const inter_body = Inter({
   subsets: ["latin"],
-  weight: ["400"],
+  weight: ["400", "900"],
   variable: "--body-family",
 });
 
@@ -28,12 +27,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      suppressHydrationWarning
       className={`${inter_display.variable} ${inter_body.variable} ${geist_mono.variable}`}
     >
-      <body className="font-body">
-        <ThemeProvider>{children}</ThemeProvider>
-      </body>
+      <body className="font-body">{children}</body>
     </html>
   );
 }
