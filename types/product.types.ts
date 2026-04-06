@@ -31,3 +31,13 @@ export interface DiscountItem {
   cardDiscount: boolean;
   url: string;
 }
+
+export interface PriceHistoryEntry {
+  timestamp: string;
+  price: number;
+  cardDiscount: boolean;
+}
+
+export interface ProductDetail extends DiscountItem {
+  priceHistory: PriceHistoryEntry[];
+}

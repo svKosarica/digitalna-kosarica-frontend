@@ -1,5 +1,6 @@
 import { getDiscounts } from "@/actions/home.actions";
-import ProductCard, { StoreName } from "@/components/shared/ProductCard";
+import ProductCard from "@/components/shared/ProductCard";
+import type { StoreName } from "@/lib/store";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 
@@ -8,7 +9,7 @@ export default async function Page() {
 
   return (
     <>
-      <section className="relative mx-4 sm:mx-6 mt-6 overflow-hidden rounded-xl bg-secondary p-8 md:p-16 flex flex-col md:flex-row items-center justify-between gap-12">
+      <section className="relative mx-4 sm:mx-6 mt-6 overflow-hidden rounded-xl bg-secondary p-8 md:p-16 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12">
         <div className="relative z-10 max-w-xl">
           <h1 className="text-3xl sm:text-4xl md:text-[60px] font-bold text-foreground mb-4 md:mb-6 tracking-tight leading-tight">
             Prihrani pri vsakem nakupu
@@ -41,7 +42,7 @@ export default async function Page() {
       </section>
 
       <div className="px-4 sm:px-6 pt-8">
-        <h2 className="text-[30px] font-semibold text-foreground">
+        <h2 className="text-2xl sm:text-[30px] font-semibold text-foreground">
           Najvišji popusti
         </h2>
         <p className="text-[14px] font-medium text-muted-foreground uppercase tracking-wider mt-1">
@@ -54,6 +55,7 @@ export default async function Page() {
         {discounts.map((item) => (
           <div key={item.id} className="shrink-0">
             <ProductCard
+              id={item.id}
               imageUrl={item.product.imageUrl}
               brandName={item.product.brand.name}
               productName={item.product.name}

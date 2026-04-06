@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ImageIcon, Plus } from "lucide-react";
 import {
   Tooltip,
@@ -9,17 +10,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-export type StoreName = "spar" | "mercator" | "hofer" | "lidl";
-
-export const STORE_LOGOS: Record<StoreName, { label: string; logoUrl: string }> = {
-  spar:     { label: "Spar",     logoUrl: "/images/spar.png"     },
-  mercator: { label: "Mercator", logoUrl: "/images/mercator.png" },
-  hofer:    { label: "Hofer",    logoUrl: "/images/hofer.png"    },
-  lidl:     { label: "Lidl",     logoUrl: "/images/lidl.png"     },
-};
+import { STORE_LOGOS, type StoreName } from "@/lib/store";
+import { useCart } from "@/lib/cart";
 
 interface ProductCardProps {
+  id: number;
   imageUrl: string;
   imageAlt?: string;
   brandName: string;
@@ -32,6 +27,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({
+  id,
   imageUrl,
   imageAlt = "Product image",
   brandName,
@@ -43,10 +39,30 @@ export default function ProductCard({
   stores = [],
 }: ProductCardProps) {
   const [imgError, setImgError] = useState(false);
+  const [added, setAdded] = useState(false);
   const hasImage = !!imageUrl && !imgError;
+  const { addItem } = useCart();
+
+  function handleAddToCart(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!stores[0]) return;
+    addItem({
+      id,
+      productName,
+      brandName,
+      imageUrl,
+      price: parseFloat(price),
+      oldPrice: oldPrice ? parseFloat(oldPrice) : undefined,
+      discountPct,
+      storeName: stores[0],
+    });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 300);
+  }
 
   return (
-    <div className="group w-64 h-[380px] bg-card rounded-xl p-5 transition-all duration-300 hover:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.06)] flex flex-col">
+    <Link href={`/product/${id}`} className="group w-64 h-[380px] bg-card rounded-xl p-5 transition-all duration-300 hover:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.06)] flex flex-col">
       <div className="relative aspect-square mb-4 bg-card rounded-lg flex items-center justify-center overflow-hidden border border-border/10">
         {hasImage ? (
           <Image
@@ -122,11 +138,14 @@ export default function ProductCard({
 
         <button
           type="button"
-          className="w-10 h-10 rounded-full bg-primary-foreground text-primary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer"
+          onClick={handleAddToCart}
+          className={`w-10 h-10 rounded-full bg-primary-foreground text-primary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all duration-200 cursor-pointer ${
+            added ? "scale-125" : ""
+          }`}
         >
           <Plus className="size-5" />
         </button>
       </div>
-    </div>
+    </Link>
   );
 }

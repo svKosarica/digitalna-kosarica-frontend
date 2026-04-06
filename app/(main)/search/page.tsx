@@ -60,13 +60,13 @@ export default async function SearchPage({ searchParams }: Props) {
   const hasNextPage = allResults.length > PAGE_SIZE;
   const results = allResults.slice(0, PAGE_SIZE);
 
-  const viewMode = params.view === "list" ? "list" : "grid";
+  const viewMode = params.view === "grid" ? "grid" : "list";
   const storeCount = new Set(results.map((item) => item.store?.name).filter(Boolean)).size;
 
   return (
     <div className="px-4 sm:px-6 py-6 space-y-6">
       <header className="mb-2">
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground mb-1">
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground mb-1 break-words">
           Rezultati za &ldquo;{query}&rdquo;
         </h1>
         <p className="text-muted-foreground font-medium">
@@ -89,6 +89,7 @@ export default async function SearchPage({ searchParams }: Props) {
           {results.map((item) => (
             <ProductCard
               key={item.id}
+              id={item.id}
               imageUrl={item.product?.imageUrl ?? ""}
               brandName={item.product?.brand?.name ?? ""}
               productName={item.product?.title ?? item.product?.name ?? ""}
@@ -112,6 +113,7 @@ export default async function SearchPage({ searchParams }: Props) {
           {results.map((item) => (
             <ProductCardList
               key={item.id}
+              id={item.id}
               imageUrl={item.product?.imageUrl ?? ""}
               brandName={item.product?.brand?.name ?? ""}
               productName={item.product?.title ?? item.product?.name ?? ""}

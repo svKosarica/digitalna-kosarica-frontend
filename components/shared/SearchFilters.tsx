@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { LayoutGrid, List } from "lucide-react";
 import {
   Select,
@@ -26,7 +26,17 @@ export function SearchFilters() {
   const stores = searchParams.get("stores");
   const available = searchParams.get("available") ?? "true";
   const cardDiscount = searchParams.get("cardDiscount") ?? "false";
-  const view = searchParams.get("view") ?? "grid";
+  const viewParam = searchParams.get("view");
+  const view = viewParam ?? "list";
+
+  useEffect(() => {
+    if (viewParam) return;
+    const isDesktop = window.matchMedia("(min-width: 640px)").matches;
+    const defaultView = isDesktop ? "grid" : "list";
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("view", defaultView);
+    router.replace(`/search?${params.toString()}`);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectedStores: number[] = stores
     ? stores.split(",").map(Number)
@@ -57,27 +67,29 @@ export function SearchFilters() {
   }
 
   return (
-    <div className="bg-secondary p-4 rounded-xl border border-border/30">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <Select
-            value={allStoresSelected ? "all" : selectedStores.join(",")}
-            onValueChange={handleStoreChange}
-          >
-            <SelectTrigger className="w-[160px] bg-card border-border text-foreground font-bold text-sm">
-              <SelectValue placeholder="Vse trgovine" />
-            </SelectTrigger>
-            <SelectContent position="popper" sideOffset={4} className="bg-card border-border">
-              <SelectItem value="all" className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">Vse trgovine</SelectItem>
-              {ALL_STORE_IDS.map((id) => (
-                <SelectItem key={id} value={String(id)} className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">
-                  <span className="capitalize">{STORE_MAP[id]}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <div className="bg-secondary p-3 sm:p-4 rounded-xl border border-border/30">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+        {/* Store select */}
+        <Select
+          value={allStoresSelected ? "all" : selectedStores.join(",")}
+          onValueChange={handleStoreChange}
+        >
+          <SelectTrigger className="w-full sm:w-[160px] bg-card border-border text-foreground font-bold text-sm">
+            <SelectValue placeholder="Vse trgovine" />
+          </SelectTrigger>
+          <SelectContent position="popper" sideOffset={4} className="bg-card border-border">
+            <SelectItem value="all" className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">Vse trgovine</SelectItem>
+            {ALL_STORE_IDS.map((id) => (
+              <SelectItem key={id} value={String(id)} className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">
+                <span className="capitalize">{STORE_MAP[id]}</span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          <div className="flex items-center gap-2 px-2">
+        {/* Switches row */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <Switch
               id="discounts"
               checked={cardDiscount === "true"}
@@ -85,12 +97,12 @@ export function SearchFilters() {
                 updateParam("cardDiscount", checked ? "true" : "false")
               }
             />
-            <Label htmlFor="discounts" className="text-sm font-bold text-foreground cursor-pointer">
+            <Label htmlFor="discounts" className="text-xs sm:text-sm font-bold text-foreground cursor-pointer">
               Zvestobni popusti
             </Label>
           </div>
 
-          <div className="flex items-center gap-2 px-2">
+          <div className="flex items-center gap-2">
             <Switch
               id="in-stock"
               checked={available === "true"}
@@ -98,32 +110,33 @@ export function SearchFilters() {
                 updateParam("available", checked ? "true" : "false")
               }
             />
-            <Label htmlFor="in-stock" className="text-sm font-bold text-foreground cursor-pointer">
+            <Label htmlFor="in-stock" className="text-xs sm:text-sm font-bold text-foreground cursor-pointer">
               Na zalogi
             </Label>
           </div>
+        </div>
 
-          <div className="h-8 w-px bg-border/40 mx-2 hidden sm:block" />
+        <div className="h-px w-full bg-border/30 sm:h-8 sm:w-px sm:bg-border/40" />
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground/60">
-              Razvrsti
-            </span>
-            <Select
-              value={filter}
-              onValueChange={(val) => updateParam("filter", val)}
-            >
-              <SelectTrigger className="w-[170px] bg-card border-border text-foreground font-bold text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper" sideOffset={4} className="bg-card border-border">
-                <SelectItem value="PRICE" className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">Cena</SelectItem>
-                <SelectItem value="PRICE_PER_UNIT" className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">Cena na enoto</SelectItem>
-                <SelectItem value="DISCOUNT_PCT" className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">Popust %</SelectItem>
-                <SelectItem value="NONE" className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">Brez razvrščanja</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Sort row */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground/60 hidden sm:inline">
+            Razvrsti
+          </span>
+          <Select
+            value={filter}
+            onValueChange={(val) => updateParam("filter", val)}
+          >
+            <SelectTrigger className="flex-1 sm:flex-none sm:w-[170px] bg-card border-border text-foreground font-bold text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent position="popper" sideOffset={4} className="bg-card border-border">
+              <SelectItem value="PRICE" className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">Cena</SelectItem>
+              <SelectItem value="PRICE_PER_UNIT" className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">Cena na enoto</SelectItem>
+              <SelectItem value="DISCOUNT_PCT" className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">Popust %</SelectItem>
+              <SelectItem value="NONE" className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">Brez razvrščanja</SelectItem>
+            </SelectContent>
+          </Select>
 
           <div className="flex items-center gap-0.5 bg-card p-1 rounded-lg border border-border">
             <button
@@ -151,33 +164,34 @@ export function SearchFilters() {
               DESC
             </button>
           </div>
-        </div>
 
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => updateParam("view", "grid")}
-            className={cn(
-              "p-2 rounded-lg transition-colors cursor-pointer",
-              view === "grid"
-                ? "bg-card text-primary border border-primary/30"
-                : "text-muted-foreground/40 hover:text-primary",
-            )}
-          >
-            <LayoutGrid className="size-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => updateParam("view", "list")}
-            className={cn(
-              "p-2 rounded-lg transition-colors cursor-pointer",
-              view === "list"
-                ? "bg-card text-primary border border-primary/30"
-                : "text-muted-foreground/40 hover:text-primary",
-            )}
-          >
-            <List className="size-5" />
-          </button>
+          {/* View toggle — pushed right, inline with sort on mobile */}
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => updateParam("view", "grid")}
+              className={cn(
+                "p-2 rounded-lg transition-colors cursor-pointer",
+                view === "grid"
+                  ? "bg-card text-primary border border-primary/30"
+                  : "text-muted-foreground/40 hover:text-primary",
+              )}
+            >
+              <LayoutGrid className="size-4 sm:size-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => updateParam("view", "list")}
+              className={cn(
+                "p-2 rounded-lg transition-colors cursor-pointer",
+                view === "list"
+                  ? "bg-card text-primary border border-primary/30"
+                  : "text-muted-foreground/40 hover:text-primary",
+              )}
+            >
+              <List className="size-4 sm:size-5" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
