@@ -15,7 +15,7 @@ export interface SearchRequest {
 
 export const STORE_MAP: Record<number, string> = {
   1: "spar",
-  2: "mercator",
-  3: "hofer",
-  4: "lidl",
+  2: "lidl",
+  3: "mercator",
+  4: "hofer",
 };

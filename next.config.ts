@@ -11,6 +11,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "imgproxy-retcat.assets.schwarz",
       },
+      {
+        protocol: "https",
+        hostname: "mercatoronline.si",
+      },
+      {
+        protocol: "https",
+        hostname: "dm.emea.cms.aldi.cx",
+      },
     ],
   },
 };

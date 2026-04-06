@@ -139,6 +139,12 @@
   }
 }
 
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 @utility font-display {
   font-family: var(--font-display-family);
   font-weight: var(--font-display-weight);

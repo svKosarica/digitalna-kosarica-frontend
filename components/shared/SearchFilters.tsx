@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
+import { LayoutGrid, List } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -9,9 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { STORE_MAP } from "@/types/search.types";
+import { cn } from "@/lib/utils";
 
 const ALL_STORE_IDS = Object.keys(STORE_MAP).map(Number);
 
@@ -24,6 +26,7 @@ export function SearchFilters() {
   const stores = searchParams.get("stores");
   const available = searchParams.get("available") ?? "true";
   const cardDiscount = searchParams.get("cardDiscount") ?? "false";
+  const view = searchParams.get("view") ?? "grid";
 
   const selectedStores: number[] = stores
     ? stores.split(",").map(Number)
@@ -39,111 +42,144 @@ export function SearchFilters() {
       }
       router.replace(`/search?${params.toString()}`);
     },
-    [router, searchParams]
+    [router, searchParams],
   );
 
-  function handleStoreToggle(storeId: number, checked: boolean) {
-    let next: number[];
-    if (selectedStores.length === 0) {
-      next = checked
-        ? [storeId]
-        : ALL_STORE_IDS.filter((id) => id !== storeId);
+  const allStoresSelected =
+    selectedStores.length === 0 || selectedStores.length === ALL_STORE_IDS.length;
+
+  function handleStoreChange(val: string) {
+    if (val === "all") {
+      updateParam("stores", null);
     } else {
-      next = checked
-        ? [...selectedStores, storeId]
-        : selectedStores.filter((id) => id !== storeId);
+      updateParam("stores", val);
     }
-
-    const allSelected =
-      next.length === ALL_STORE_IDS.length || next.length === 0;
-    updateParam("stores", allSelected ? null : next.join(","));
-  }
-
-  function isStoreChecked(storeId: number) {
-    if (selectedStores.length === 0) return true;
-    return selectedStores.includes(storeId);
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-6">
-      {/* Filter by */}
-      <div className="flex items-center gap-2">
-        <Label className="text-sm text-muted-foreground whitespace-nowrap">
-          Razvrsti po
-        </Label>
-        <Select
-          value={filter}
-          onValueChange={(val) => updateParam("filter", val)}
-        >
-          <SelectTrigger className="w-[170px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="PRICE">Cena</SelectItem>
-            <SelectItem value="PRICE_PER_UNIT">Cena na enoto</SelectItem>
-            <SelectItem value="DISCOUNT_PCT">Popust %</SelectItem>
-            <SelectItem value="NONE">Brez razvrščanja</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+    <div className="bg-secondary p-4 rounded-xl border border-border/30">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <Select
+            value={allStoresSelected ? "all" : selectedStores.join(",")}
+            onValueChange={handleStoreChange}
+          >
+            <SelectTrigger className="w-[160px] bg-card border-border text-foreground font-bold text-sm">
+              <SelectValue placeholder="Vse trgovine" />
+            </SelectTrigger>
+            <SelectContent position="popper" sideOffset={4} className="bg-card border-border">
+              <SelectItem value="all" className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">Vse trgovine</SelectItem>
+              {ALL_STORE_IDS.map((id) => (
+                <SelectItem key={id} value={String(id)} className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">
+                  <span className="capitalize">{STORE_MAP[id]}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-      {/* Sort direction */}
-      <div className="flex items-center gap-2">
-        <Label className="text-sm text-muted-foreground whitespace-nowrap">
-          Vrstni red
-        </Label>
-        <Select
-          value={order}
-          onValueChange={(val) => updateParam("order", val)}
-        >
-          <SelectTrigger className="w-[160px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ASCENDING">Naraščajoče</SelectItem>
-            <SelectItem value="DESCENDING">Padajoče</SelectItem>
-            <SelectItem value="NONE">Brez</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Store checkboxes */}
-      <div className="flex items-center gap-3">
-        <span className="text-sm text-muted-foreground">Trgovine</span>
-        {ALL_STORE_IDS.map((id) => (
-          <label key={id} className="flex items-center gap-1.5 cursor-pointer">
-            <Checkbox
-              checked={isStoreChecked(id)}
+          <div className="flex items-center gap-2 px-2">
+            <Switch
+              id="discounts"
+              checked={cardDiscount === "true"}
               onCheckedChange={(checked) =>
-                handleStoreToggle(id, checked === true)
+                updateParam("cardDiscount", checked ? "true" : "false")
               }
             />
-            <span className="text-sm capitalize">{STORE_MAP[id]}</span>
-          </label>
-        ))}
+            <Label htmlFor="discounts" className="text-sm font-bold text-foreground cursor-pointer">
+              Zvestobni popusti
+            </Label>
+          </div>
+
+          <div className="flex items-center gap-2 px-2">
+            <Switch
+              id="in-stock"
+              checked={available === "true"}
+              onCheckedChange={(checked) =>
+                updateParam("available", checked ? "true" : "false")
+              }
+            />
+            <Label htmlFor="in-stock" className="text-sm font-bold text-foreground cursor-pointer">
+              Na zalogi
+            </Label>
+          </div>
+
+          <div className="h-8 w-px bg-border/40 mx-2 hidden sm:block" />
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground/60">
+              Razvrsti
+            </span>
+            <Select
+              value={filter}
+              onValueChange={(val) => updateParam("filter", val)}
+            >
+              <SelectTrigger className="w-[170px] bg-card border-border text-foreground font-bold text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent position="popper" sideOffset={4} className="bg-card border-border">
+                <SelectItem value="PRICE" className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">Cena</SelectItem>
+                <SelectItem value="PRICE_PER_UNIT" className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">Cena na enoto</SelectItem>
+                <SelectItem value="DISCOUNT_PCT" className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">Popust %</SelectItem>
+                <SelectItem value="NONE" className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">Brez razvrščanja</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-0.5 bg-card p-1 rounded-lg border border-border">
+            <button
+              type="button"
+              onClick={() => updateParam("order", "ASCENDING")}
+              className={cn(
+                "px-3 py-1 text-xs font-bold rounded-md transition-colors cursor-pointer",
+                order === "ASCENDING"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-secondary",
+              )}
+            >
+              ASC
+            </button>
+            <button
+              type="button"
+              onClick={() => updateParam("order", "DESCENDING")}
+              className={cn(
+                "px-3 py-1 text-xs font-bold rounded-md transition-colors cursor-pointer",
+                order === "DESCENDING"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-secondary",
+              )}
+            >
+              DESC
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => updateParam("view", "grid")}
+            className={cn(
+              "p-2 rounded-lg transition-colors cursor-pointer",
+              view === "grid"
+                ? "bg-card text-primary border border-primary/30"
+                : "text-muted-foreground/40 hover:text-primary",
+            )}
+          >
+            <LayoutGrid className="size-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => updateParam("view", "list")}
+            className={cn(
+              "p-2 rounded-lg transition-colors cursor-pointer",
+              view === "list"
+                ? "bg-card text-primary border border-primary/30"
+                : "text-muted-foreground/40 hover:text-primary",
+            )}
+          >
+            <List className="size-5" />
+          </button>
+        </div>
       </div>
-
-      {/* Available only */}
-      <label className="flex items-center gap-1.5 cursor-pointer">
-        <Checkbox
-          checked={available === "true"}
-          onCheckedChange={(checked) =>
-            updateParam("available", checked === true ? "true" : "false")
-          }
-        />
-        <span className="text-sm">Na zalogi</span>
-      </label>
-
-      {/* Card discount */}
-      <label className="flex items-center gap-1.5 cursor-pointer">
-        <Checkbox
-          checked={cardDiscount === "true"}
-          onCheckedChange={(checked) =>
-            updateParam("cardDiscount", checked === true ? "true" : "false")
-          }
-        />
-        <span className="text-sm">Kartica ugodnosti</span>
-      </label>
     </div>
   );
 }
