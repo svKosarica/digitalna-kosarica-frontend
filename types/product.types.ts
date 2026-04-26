@@ -32,6 +32,14 @@ export interface DiscountItem {
   url: string;
 }
 
+export interface SearchResponse {
+  products: DiscountItem[];
+  currentPage: number;
+  numberOfPages: number;
+  currentItems: number;
+  allItems: number;
+}
+
 export interface PriceHistoryEntry {
   timestamp: string;
   price: number;

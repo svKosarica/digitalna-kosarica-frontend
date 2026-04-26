@@ -1,11 +1,19 @@
 "use server";
 
-import { DiscountItem } from "@/types/product.types";
-import { SearchRequest } from "@/types/search.types";
+import type { SearchResponse } from "@/types/product.types";
+import type { SearchRequest } from "@/types/search.types";
+
+const EMPTY_RESPONSE: SearchResponse = {
+  products: [],
+  currentPage: 0,
+  numberOfPages: 0,
+  currentItems: 0,
+  allItems: 0,
+};
 
 export async function searchProducts(
   request: SearchRequest
-): Promise<DiscountItem[]> {
+): Promise<SearchResponse> {
   const res = await fetch(
     `${process.env.API_URL}/store/products/all`,
     {
@@ -23,8 +31,7 @@ export async function searchProducts(
   }
 
   const text = await res.text();
-  if (!text) return [];
+  if (!text) return EMPTY_RESPONSE;
 
-  const data = JSON.parse(text);
-  return (Array.isArray(data) ? data : []) as DiscountItem[];
+  return JSON.parse(text) as SearchResponse;
 }

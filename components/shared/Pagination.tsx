@@ -7,19 +7,22 @@ import { cn } from "@/lib/utils";
 
 interface PaginationProps {
   currentPage: number;
-  hasNextPage: boolean;
+  totalPages: number;
 }
 
-function getPageNumbers(current: number, hasNext: boolean): (number | "ellipsis")[] {
+function getPageNumbers(current: number, total: number): (number | "ellipsis")[] {
+  if (total <= 9) {
+    return Array.from({ length: total }, (_, i) => i);
+  }
+
   const pages = new Set<number>();
 
   pages.add(0);
+  pages.add(total - 1);
 
-  for (let i = current - 1; i <= current + 1; i++) {
-    if (i >= 0) pages.add(i);
+  for (let i = current - 3; i <= current + 3; i++) {
+    if (i >= 0 && i < total) pages.add(i);
   }
-
-  if (hasNext) pages.add(current + 1);
 
   const sorted = [...pages].sort((a, b) => a - b);
 
@@ -34,7 +37,7 @@ function getPageNumbers(current: number, hasNext: boolean): (number | "ellipsis"
   return result;
 }
 
-export function Pagination({ currentPage, hasNextPage }: PaginationProps) {
+export function Pagination({ currentPage, totalPages }: PaginationProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -51,10 +54,11 @@ export function Pagination({ currentPage, hasNextPage }: PaginationProps) {
     [router, searchParams],
   );
 
-  const hasPrev = currentPage > 0;
-  const pages = getPageNumbers(currentPage, hasNextPage);
+  if (totalPages <= 1) return null;
 
-  if (!hasPrev && !hasNextPage) return null;
+  const hasPrev = currentPage > 0;
+  const hasNext = currentPage < totalPages - 1;
+  const pages = getPageNumbers(currentPage, totalPages);
 
   return (
     <div className="mt-12 flex items-center justify-center gap-2">
@@ -96,11 +100,11 @@ export function Pagination({ currentPage, hasNextPage }: PaginationProps) {
 
       <button
         type="button"
-        disabled={!hasNextPage}
+        disabled={!hasNext}
         onClick={() => goToPage(currentPage + 1)}
         className={cn(
           "w-10 h-10 flex items-center justify-center rounded-full transition-colors cursor-pointer",
-          hasNextPage
+          hasNext
             ? "bg-secondary text-muted-foreground hover:bg-primary hover:text-primary-foreground"
             : "bg-secondary text-muted-foreground opacity-50 pointer-events-none",
         )}

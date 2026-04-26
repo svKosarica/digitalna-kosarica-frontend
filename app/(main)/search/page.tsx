@@ -4,7 +4,7 @@ import ProductCardList from "@/components/shared/ProductCardList";
 import { Pagination } from "@/components/shared/Pagination";
 import { SearchFilters } from "@/components/shared/SearchFilters";
 import { normalizeStoreName } from "@/lib/utils";
-import type { FilterOption, SearchRequest, SortOption } from "@/types/search.types";
+import type { FilterOption, SortOption } from "@/types/search.types";
 import { SearchX } from "lucide-react";
 
 const PAGE_SIZE = 50;
@@ -45,21 +45,18 @@ export default async function SearchPage({ searchParams }: Props) {
   const cardDiscount = params.cardDiscount === "true";
   const currentPage = Math.max(0, parseInt(typeof params.page === "string" ? params.page : "0", 10) || 0);
 
-  const request: SearchRequest = {
+  const response = await searchProducts({
     page: currentPage,
-    size: PAGE_SIZE + 1,
+    size: PAGE_SIZE,
     query,
     filter,
     sortOption: order,
     isAvailable,
     cardDiscount,
     ...(storeIds && storeIds.length > 0 ? { storeIds } : {}),
-  };
+  });
 
-  const allResults = await searchProducts(request);
-  const hasNextPage = allResults.length > PAGE_SIZE;
-  const results = allResults.slice(0, PAGE_SIZE);
-
+  const results = response.products;
   const viewMode = params.view === "grid" ? "grid" : "list";
   const storeCount = new Set(results.map((item) => item.store?.name).filter(Boolean)).size;
 
@@ -70,7 +67,7 @@ export default async function SearchPage({ searchParams }: Props) {
           Rezultati za &ldquo;{query}&rdquo;
         </h1>
         <p className="text-muted-foreground font-medium">
-          {results.length} {results.length === 1 ? "izdelek" : "izdelkov"} v {storeCount}{" "}
+          {response.allItems} {response.allItems === 1 ? "izdelek" : "izdelkov"} v {storeCount}{" "}
           {storeCount === 1 ? "trgovini" : "trgovinah"}
         </p>
       </header>
@@ -134,9 +131,7 @@ export default async function SearchPage({ searchParams }: Props) {
         </div>
       )}
 
-      {(results.length > 0 || currentPage > 0) && (
-        <Pagination currentPage={currentPage} hasNextPage={hasNextPage} />
-      )}
+      <Pagination currentPage={response.currentPage} totalPages={response.numberOfPages} />
     </div>
   );
 }
