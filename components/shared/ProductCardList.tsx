@@ -78,7 +78,7 @@ export default function ProductCardList({
           </div>
         )}
 
-        {stores.length > 0 && (
+        {stores.length > 0 && STORE_LOGOS[stores[0]] && (
           <div className="absolute -bottom-1 -right-1 sm:hidden">
             {(() => {
               const { label, logoUrl } = STORE_LOGOS[stores[0]];
@@ -141,7 +141,9 @@ export default function ProductCardList({
           {stores.length > 0 && (
             <div className="flex -space-x-2">
               {stores.map((store) => {
-                const { label, logoUrl } = STORE_LOGOS[store];
+                const storeInfo = STORE_LOGOS[store];
+                if (!storeInfo) return null;
+                const { label, logoUrl } = storeInfo;
                 return (
                   <div
                     key={store}

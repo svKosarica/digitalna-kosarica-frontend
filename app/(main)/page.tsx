@@ -1,6 +1,6 @@
 import { getDiscounts } from "@/actions/home.actions";
 import ProductCard from "@/components/shared/ProductCard";
-import type { StoreName } from "@/lib/store";
+import { normalizeStoreName } from "@/lib/utils";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 
@@ -62,7 +62,11 @@ export default async function Page() {
               price={item.price.toString()}
               oldPrice={item.oldPrice.toString()}
               discountPct={item.discountPct}
-              stores={[item.store.name as StoreName]}
+              stores={
+                item.store?.name && normalizeStoreName(item.store.name)
+                  ? [normalizeStoreName(item.store.name)!]
+                  : []
+              }
             />
           </div>
         ))}

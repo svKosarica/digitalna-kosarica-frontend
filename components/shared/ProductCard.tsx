@@ -86,7 +86,9 @@ export default function ProductCard({
         {stores.length > 0 && (
           <div className="absolute top-3 right-3 flex gap-1">
             {stores.map((store) => {
-              const { label, logoUrl } = STORE_LOGOS[store];
+              const storeInfo = STORE_LOGOS[store];
+              if (!storeInfo) return null;
+              const { label, logoUrl } = storeInfo;
               return (
                 <div
                   key={store}

@@ -79,7 +79,7 @@ export default function BasketPage() {
               exportCSV(
                 items.map((i) => ({
                   productName: i.productName,
-                  storeName: STORE_LOGOS[i.storeName].label,
+                  storeName: STORE_LOGOS[i.storeName]?.label ?? i.storeName,
                   price: i.price,
                   quantity: i.quantity,
                 })),
@@ -109,16 +109,18 @@ export default function BasketPage() {
                     className="flex items-center justify-between p-4 rounded-xl bg-card shadow-sm border border-transparent"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-card border border-border/20 flex items-center justify-center p-1 overflow-hidden">
-                        <Image
-                          src={logo.logoUrl}
-                          alt={logo.label}
-                          width={28}
-                          height={28}
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                      <span className="font-bold text-foreground">{logo.label}</span>
+                      {logo && (
+                        <div className="w-10 h-10 rounded-full bg-card border border-border/20 flex items-center justify-center p-1 overflow-hidden">
+                          <Image
+                            src={logo.logoUrl}
+                            alt={logo.label}
+                            width={28}
+                            height={28}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      )}
+                      <span className="font-bold text-foreground">{logo?.label ?? name}</span>
                     </div>
                     <span className="text-xl font-extrabold text-foreground">
                       {total.toFixed(2)} &euro;
