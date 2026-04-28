@@ -35,7 +35,7 @@ export default async function ProductDetailPage({ params }: Props) {
     priceHistory,
   } = data;
 
-  const storeName = normalizeStoreName(store.name);
+  const storeName = store?.name ? normalizeStoreName(store.name) : null;
 
   return (
     <div className="px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-10">

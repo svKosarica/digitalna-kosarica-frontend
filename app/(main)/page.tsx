@@ -57,10 +57,10 @@ export default async function Page() {
             <ProductCard
               id={item.id}
               imageUrl={item.product.imageUrl}
-              brandName={item.product.brand.name}
+              brandName={item.product.brand?.name ?? ""}
               productName={item.product.name}
-              price={item.price.toString()}
-              oldPrice={item.oldPrice.toString()}
+              price={item.price?.toString() ?? ""}
+              oldPrice={item.oldPrice?.toString() ?? ""}
               discountPct={item.discountPct}
               stores={
                 item.store?.name && normalizeStoreName(item.store.name)
