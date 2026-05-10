@@ -5,6 +5,7 @@ import { Pagination } from "@/components/shared/Pagination";
 import { SearchFilters } from "@/components/shared/SearchFilters";
 import { normalizeStoreName } from "@/lib/utils";
 import type { FilterOption, SortOption } from "@/types/search.types";
+import { STORE_MAP } from "@/types/search.types";
 import { SearchX } from "lucide-react";
 
 const PAGE_SIZE = 50;
@@ -37,9 +38,10 @@ export default async function SearchPage({ searchParams }: Props) {
     ? (params.order as SortOption)
     : "DESCENDING";
 
+  const ALL_STORE_IDS = Object.keys(STORE_MAP).map(Number);
   const storeIds = typeof params.stores === "string"
     ? params.stores.split(",").map(Number).filter(Boolean)
-    : undefined;
+    : ALL_STORE_IDS;
 
   const isAvailable = params.available !== "false";
   const cardDiscount = params.cardDiscount === "true";
@@ -53,7 +55,7 @@ export default async function SearchPage({ searchParams }: Props) {
     sortOption: order,
     isAvailable,
     cardDiscount,
-    ...(storeIds && storeIds.length > 0 ? { storeIds } : {}),
+    storeIds,
   });
 
   const results = response.products;
