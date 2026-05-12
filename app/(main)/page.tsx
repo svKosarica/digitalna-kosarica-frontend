@@ -1,8 +1,8 @@
 import { getDiscounts } from "@/actions/home.actions";
 import ProductCard from "@/components/shared/ProductCard";
+import { HeroFocusButton } from "@/components/shared/HeroFocusButton";
 import { normalizeStoreName } from "@/lib/utils";
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
 
 export default async function Page() {
   const discounts = await getDiscounts();
@@ -18,13 +18,7 @@ export default async function Page() {
             Odkrijte najugodnejše cene vaših najljubših izdelkov v vseh
             trgovinah na enem mestu. Pametno nakupovanje, brez truda.
           </p>
-          <button
-            type="button"
-            className="bg-primary text-primary-foreground px-6 py-3 md:px-8 md:py-4 rounded-lg font-semibold tracking-wide shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center gap-2 cursor-pointer text-sm md:text-base"
-          >
-            Primerjaj cene
-            <ArrowRight className="size-5" />
-          </button>
+          <HeroFocusButton />
         </div>
         <div className="relative w-full max-w-md aspect-video rounded-2xl overflow-hidden shadow-2xl hidden md:block">
           <Image
