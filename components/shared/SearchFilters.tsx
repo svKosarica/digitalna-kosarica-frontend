@@ -149,7 +149,7 @@ export function SearchFilters() {
                   : "text-muted-foreground hover:bg-secondary",
               )}
             >
-              ASC
+              Naraš.
             </button>
             <button
               type="button"
@@ -161,7 +161,7 @@ export function SearchFilters() {
                   : "text-muted-foreground hover:bg-secondary",
               )}
             >
-              DESC
+              Pad.
             </button>
           </div>
 

@@ -32,6 +32,9 @@ interface CartContextValue {
   updateQuantity: (id: number, qty: number) => void;
   clearCart: () => void;
   totalItems: number;
+  /** Monotonically increasing nonce, bumped on every addItem. Lets components
+   *  (e.g. the navbar basket) react to "an item was just added". */
+  lastAddedAt: number;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -57,6 +60,7 @@ function saveCart(items: CartItem[]) {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [lastAddedAt, setLastAddedAt] = useState(0);
 
   useEffect(() => {
     setItems(loadCart());
@@ -77,6 +81,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { ...item, quantity: 1 }];
     });
+    setLastAddedAt((c) => c + 1);
   }, []);
 
   const removeItem = useCallback((id: number) => {
@@ -98,8 +103,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<CartContextValue>(
-    () => ({ items, addItem, removeItem, updateQuantity, clearCart, totalItems }),
-    [items, addItem, removeItem, updateQuantity, clearCart, totalItems],
+    () => ({ items, addItem, removeItem, updateQuantity, clearCart, totalItems, lastAddedAt }),
+    [items, addItem, removeItem, updateQuantity, clearCart, totalItems, lastAddedAt],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

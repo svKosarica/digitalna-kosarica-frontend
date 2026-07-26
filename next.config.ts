@@ -13,6 +13,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "www.lidl.si",
+      },
+      {
+        protocol: "https",
         hostname: "mercatoronline.si",
       },
       {

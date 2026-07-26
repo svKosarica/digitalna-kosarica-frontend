@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ImageIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, ImageIcon } from "lucide-react";
 import { type StoreName, STORE_LOGOS } from "@/lib/store";
 import { useCart } from "@/lib/cart";
 
@@ -37,9 +37,21 @@ export default function ProductCardList({
   const hasImage = !!imageUrl && !imgError;
   const { addItem } = useCart();
 
+  // Price direction vs. old price (oldPrice is only passed when it differs).
+  const oldPriceNum = oldPrice ? parseFloat(oldPrice) : NaN;
+  const priceNum = parseFloat(price);
+  const priceDir: "up" | "down" | null =
+    !Number.isNaN(oldPriceNum) && !Number.isNaN(priceNum) && oldPriceNum !== priceNum
+      ? priceNum > oldPriceNum
+        ? "up"
+        : "down"
+      : null;
+  const isIncrease = priceDir === "up";
+
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    if (added) return;
     if (!stores[0]) return;
     addItem({
       id,
@@ -52,7 +64,7 @@ export default function ProductCardList({
       storeName: stores[0],
     });
     setAdded(true);
-    setTimeout(() => setAdded(false), 300);
+    setTimeout(() => setAdded(false), 1200);
   }
 
   return (
@@ -103,12 +115,22 @@ export default function ProductCardList({
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2 sm:hidden">
-          <div className="flex items-baseline gap-2">
+          <div className="flex items-baseline gap-1.5">
             <span className="text-lg font-bold text-foreground">
               {price} {currency}
             </span>
+            {priceDir === "up" && (
+              <ArrowUp className="size-3.5 self-center text-red-500" strokeWidth={3} aria-label="Cena narasla" />
+            )}
+            {priceDir === "down" && (
+              <ArrowDown className="size-3.5 self-center text-green-600" strokeWidth={3} aria-label="Cena padla" />
+            )}
             {oldPrice && (
-              <span className="text-xs font-semibold text-accent-foreground line-through">
+              <span
+                className={`text-xs font-semibold text-accent-foreground ${
+                  isIncrease ? "" : "line-through"
+                }`}
+              >
                 {oldPrice} {currency}
               </span>
             )}
@@ -116,22 +138,39 @@ export default function ProductCardList({
           <button
             type="button"
             onClick={handleAddToCart}
-            className={`bg-primary text-primary-foreground py-1.5 px-3 rounded-xl font-bold text-xs hover:bg-primary/90 transition-all duration-200 cursor-pointer ${
-              added ? "scale-110" : "active:scale-95"
+            disabled={added}
+            className={`inline-flex items-center gap-1 bg-primary text-primary-foreground py-1.5 px-3 rounded-xl font-bold text-xs transition-colors duration-200 ${
+              added ? "animate-button-pop cursor-default" : "hover:bg-primary/90 active:scale-95 cursor-pointer"
             }`}
           >
-            V Košarico
+            {added ? (
+              <>
+                <Check className="size-3.5" strokeWidth={3} /> Dodano
+              </>
+            ) : (
+              "V Košarico"
+            )}
           </button>
         </div>
       </div>
 
       <div className="hidden sm:flex flex-col items-end gap-3 shrink-0 min-w-[180px]">
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-baseline gap-1.5">
           <span className="text-2xl font-bold text-foreground">
             {price} {currency}
           </span>
+          {priceDir === "up" && (
+            <ArrowUp className="size-4 self-center text-red-500" strokeWidth={3} aria-label="Cena narasla" />
+          )}
+          {priceDir === "down" && (
+            <ArrowDown className="size-4 self-center text-green-600" strokeWidth={3} aria-label="Cena padla" />
+          )}
           {oldPrice && (
-            <span className="text-sm font-semibold text-accent-foreground line-through">
+            <span
+              className={`text-sm font-semibold text-accent-foreground ${
+                isIncrease ? "" : "line-through"
+              }`}
+            >
               {oldPrice} {currency}
             </span>
           )}
@@ -166,11 +205,18 @@ export default function ProductCardList({
           <button
             type="button"
             onClick={handleAddToCart}
-            className={`bg-primary text-primary-foreground py-2 px-3 rounded-xl font-bold text-sm hover:bg-primary/90 transition-all duration-200 cursor-pointer ${
-              added ? "scale-110" : "active:scale-95"
+            disabled={added}
+            className={`inline-flex items-center gap-1.5 bg-primary text-primary-foreground py-2 px-3 rounded-xl font-bold text-sm transition-colors duration-200 ${
+              added ? "animate-button-pop cursor-default" : "hover:bg-primary/90 active:scale-95 cursor-pointer"
             }`}
           >
-            V Košarico
+            {added ? (
+              <>
+                <Check className="size-4" strokeWidth={3} /> Dodano
+              </>
+            ) : (
+              "V Košarico"
+            )}
           </button>
         </div>
       </div>

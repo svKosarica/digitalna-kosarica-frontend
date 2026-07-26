@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ImageIcon, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, ImageIcon, Plus } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -45,9 +45,21 @@ export default function ProductCard({
   const hasImage = !!imageUrl && !imgError;
   const { addItem } = useCart();
 
+  // Price direction vs. old price (oldPrice is only passed when it differs).
+  const oldPriceNum = oldPrice ? parseFloat(oldPrice) : NaN;
+  const priceNum = parseFloat(price);
+  const priceDir: "up" | "down" | null =
+    !Number.isNaN(oldPriceNum) && !Number.isNaN(priceNum) && oldPriceNum !== priceNum
+      ? priceNum > oldPriceNum
+        ? "up"
+        : "down"
+      : null;
+  const isIncrease = priceDir === "up";
+
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    if (added) return;
     if (!stores[0]) return;
     addItem({
       id,
@@ -60,7 +72,7 @@ export default function ProductCard({
       storeName: stores[0],
     });
     setAdded(true);
-    setTimeout(() => setAdded(false), 300);
+    setTimeout(() => setAdded(false), 1200);
   }
 
   return (
@@ -142,25 +154,37 @@ export default function ProductCard({
           {oldPrice && (
             <p
               className={`text-xs text-accent-foreground mb-0.5 ${
-                badgeVariant === "increase" ? "" : "line-through"
+                isIncrease ? "" : "line-through"
               }`}
             >
               {oldPrice} {currency}
             </p>
           )}
-          <p className="text-2xl font-bold text-foreground">
-            {price} {currency}
-          </p>
+          <div className="flex items-center gap-1">
+            <p className="text-2xl font-bold text-foreground">
+              {price} {currency}
+            </p>
+            {priceDir === "up" && (
+              <ArrowUp className="size-4 text-red-500" strokeWidth={3} aria-label="Cena narasla" />
+            )}
+            {priceDir === "down" && (
+              <ArrowDown className="size-4 text-green-600" strokeWidth={3} aria-label="Cena padla" />
+            )}
+          </div>
         </div>
 
         <button
           type="button"
           onClick={handleAddToCart}
-          className={`w-10 h-10 rounded-full bg-primary-foreground text-primary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all duration-200 cursor-pointer ${
-            added ? "scale-125" : ""
+          disabled={added}
+          aria-label={added ? "Dodano v košarico" : "Dodaj v košarico"}
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-200 ${
+            added
+              ? "bg-primary text-primary-foreground animate-button-pop cursor-default"
+              : "bg-primary-foreground text-primary hover:bg-primary hover:text-primary-foreground cursor-pointer"
           }`}
         >
-          <Plus className="size-5" />
+          {added ? <Check className="size-5" strokeWidth={3} /> : <Plus className="size-5" />}
         </button>
       </div>
     </Link>
