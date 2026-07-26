@@ -1,11 +1,18 @@
-import { getDiscounts } from "@/actions/home.actions";
-import ProductCard from "@/components/shared/ProductCard";
+import {
+  getDiscounts,
+  getHighestPriceIncrease,
+  getMostPopular,
+} from "@/actions/home.actions";
+import ProductScrollSection from "@/components/shared/ProductScrollSection";
 import { HeroFocusButton } from "@/components/shared/HeroFocusButton";
-import { normalizeStoreName } from "@/lib/utils";
 import Image from "next/image";
 
 export default async function Page() {
-  const discounts = await getDiscounts();
+  const [discounts, popular, increases] = await Promise.all([
+    getDiscounts(),
+    getMostPopular(),
+    getHighestPriceIncrease(),
+  ]);
 
   return (
     <>
@@ -22,7 +29,7 @@ export default async function Page() {
         </div>
         <div className="relative w-full max-w-md aspect-video rounded-2xl overflow-hidden shadow-2xl hidden md:block">
           <Image
-            src="/images/hero-image.png"
+            src="/images/hero-image.jpg"
             alt="Izbor živil iz trgovin"
             fill
             className="object-cover"
@@ -35,37 +42,24 @@ export default async function Page() {
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 bg-accent/5 rounded-full blur-3xl" />
       </section>
 
-      <div className="px-4 sm:px-6 pt-8">
-        <h2 className="text-2xl sm:text-[30px] font-semibold text-foreground">
-          Najvišji popusti
-        </h2>
-        <p className="text-[14px] font-medium text-muted-foreground uppercase tracking-wider mt-1">
-          Današnja selekcija prihrankov
-        </p>
-      </div>
+      <ProductScrollSection
+        title="Najvišji popusti"
+        subtitle="Današnja selekcija prihrankov"
+        items={discounts}
+      />
 
-      <div className="flex gap-4 py-6 overflow-x-auto">
-        <div className="shrink-0 w-0" />
-        {discounts.map((item) => (
-          <div key={item.id} className="shrink-0">
-            <ProductCard
-              id={item.id}
-              imageUrl={item.product.imageUrl}
-              brandName={item.product.brand?.name ?? ""}
-              productName={item.product.name}
-              price={item.price?.toString() ?? ""}
-              oldPrice={item.oldPrice?.toString() ?? ""}
-              discountPct={item.discountPct}
-              stores={
-                item.store?.name && normalizeStoreName(item.store.name)
-                  ? [normalizeStoreName(item.store.name)!]
-                  : []
-              }
-            />
-          </div>
-        ))}
-        <div className="shrink-0 w-4" />
-      </div>
+      <ProductScrollSection
+        title="Najbolj priljubljeni"
+        subtitle="Izdelki, ki jih kupci najpogosteje kupujejo"
+        items={popular}
+      />
+
+      <ProductScrollSection
+        title="Največje podražitve"
+        subtitle="Izdelki, ki so se najbolj podražili"
+        items={increases}
+        badgeVariant="increase"
+      />
     </>
   );
 }

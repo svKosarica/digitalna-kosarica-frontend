@@ -24,6 +24,7 @@ interface ProductCardProps {
   discountPct?: number;
   currency?: string;
   stores?: StoreName[];
+  badgeVariant?: "discount" | "increase";
 }
 
 export default function ProductCard({
@@ -37,6 +38,7 @@ export default function ProductCard({
   discountPct,
   currency = "€",
   stores = [],
+  badgeVariant = "discount",
 }: ProductCardProps) {
   const [imgError, setImgError] = useState(false);
   const [added, setAdded] = useState(false);
@@ -77,11 +79,20 @@ export default function ProductCard({
           <ImageIcon className="size-12 text-border" />
         )}
 
-        {discountPct != null && discountPct > 0 && (
-          <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold tracking-tight">
-            -{discountPct}%
-          </div>
-        )}
+        {discountPct != null &&
+          (badgeVariant === "increase" ? discountPct < 0 : discountPct > 0) && (
+            <div
+              className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold tracking-tight ${
+                badgeVariant === "increase"
+                  ? "bg-destructive text-destructive-foreground"
+                  : "bg-primary text-primary-foreground"
+              }`}
+            >
+              {badgeVariant === "increase"
+                ? `+${Math.round(Math.abs(discountPct))}%`
+                : `-${discountPct}%`}
+            </div>
+          )}
 
         {stores.length > 0 && (
           <div className="absolute top-3 right-3 flex gap-1">
@@ -129,7 +140,11 @@ export default function ProductCard({
       <div className="mt-auto flex items-end justify-between">
         <div>
           {oldPrice && (
-            <p className="text-xs text-accent-foreground line-through mb-0.5">
+            <p
+              className={`text-xs text-accent-foreground mb-0.5 ${
+                badgeVariant === "increase" ? "" : "line-through"
+              }`}
+            >
               {oldPrice} {currency}
             </p>
           )}

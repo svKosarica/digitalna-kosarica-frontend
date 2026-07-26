@@ -1,0 +1,114 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import ProductCard from "@/components/shared/ProductCard";
+import { normalizeStoreName } from "@/lib/utils";
+import type { DiscountItem } from "@/types/product.types";
+
+interface ProductScrollSectionProps {
+  title: string;
+  subtitle: string;
+  items: DiscountItem[];
+  badgeVariant?: "discount" | "increase";
+}
+
+export default function ProductScrollSection({
+  title,
+  subtitle,
+  items,
+  badgeVariant = "discount",
+}: ProductScrollSectionProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollState = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    updateScrollState();
+    window.addEventListener("resize", updateScrollState);
+    return () => window.removeEventListener("resize", updateScrollState);
+  }, [updateScrollState, items.length]);
+
+  function scrollByViewport(direction: 1 | -1) {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: direction * el.clientWidth * 0.9, behavior: "smooth" });
+  }
+
+  const hasItems = items.length > 0;
+
+  // Nothing to show (e.g. endpoint not yet available or a transient API
+  // outage) — hide the whole section instead of leaving a stray header.
+  if (!hasItems) return null;
+
+  return (
+    <section>
+      <div className="px-4 sm:px-6 pt-8 flex items-end justify-between gap-4">
+        <div>
+          <h2 className="text-2xl sm:text-[30px] font-semibold text-foreground">
+            {title}
+          </h2>
+          <p className="text-[14px] font-medium text-muted-foreground uppercase tracking-wider mt-1">
+            {subtitle}
+          </p>
+        </div>
+
+        <div className="hidden md:flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => scrollByViewport(-1)}
+            disabled={!canScrollLeft}
+            aria-label="Pomakni levo"
+            className="w-10 h-10 rounded-full bg-primary-foreground text-primary border border-border/20 flex items-center justify-center transition-all duration-200 hover:bg-primary hover:text-primary-foreground disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+          >
+            <ChevronLeft className="size-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollByViewport(1)}
+            disabled={!canScrollRight}
+            aria-label="Pomakni desno"
+            className="w-10 h-10 rounded-full bg-primary-foreground text-primary border border-border/20 flex items-center justify-center transition-all duration-200 hover:bg-primary hover:text-primary-foreground disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+          >
+            <ChevronRight className="size-5" />
+          </button>
+        </div>
+      </div>
+
+      <div
+        ref={scrollRef}
+        onScroll={updateScrollState}
+        className="flex gap-4 py-6 overflow-x-auto"
+      >
+        <div className="shrink-0 w-0" />
+        {items.map((item) => (
+          <div key={item.id} className="shrink-0">
+            <ProductCard
+              id={item.id}
+              imageUrl={item.product.imageUrl}
+              brandName={item.product.brand?.name ?? ""}
+              productName={item.product.name}
+              price={item.price?.toString() ?? ""}
+              oldPrice={item.oldPrice?.toString() ?? ""}
+              discountPct={item.discountPct}
+              badgeVariant={badgeVariant}
+              stores={
+                item.store?.name && normalizeStoreName(item.store.name)
+                  ? [normalizeStoreName(item.store.name)!]
+                  : []
+              }
+            />
+          </div>
+        ))}
+        <div className="shrink-0 w-4" />
+      </div>
+    </section>
+  );
+}
