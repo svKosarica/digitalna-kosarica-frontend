@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { ImageIcon, ExternalLink } from "lucide-react";
-import { getProduct } from "@/actions/product.actions";
+import { getProduct, getSimilarProducts } from "@/actions/product.actions";
 import { normalizeStoreName } from "@/lib/utils";
 import { STORE_LOGOS } from "@/lib/store";
 import { PriceHistoryChart } from "@/components/shared/PriceHistoryChart";
+import ProductScrollSection from "@/components/shared/ProductScrollSection";
 import { BackButton } from "@/components/shared/BackButton";
 import { AddToCartButton } from "@/components/shared/AddToCartButton";
 
@@ -16,9 +17,12 @@ export default async function ProductDetailPage({ params }: Props) {
   const { product_id } = await params;
 
   let data;
+  let similar;
   try {
-    data = await getProduct(product_id);
-    
+    [data, similar] = await Promise.all([
+      getProduct(product_id),
+      getSimilarProducts(product_id),
+    ]);
   } catch {
     notFound();
   }
@@ -162,6 +166,12 @@ export default async function ProductDetailPage({ params }: Props) {
           </div>
         )}
       </section>
+
+      <ProductScrollSection
+        title="Podobni izdelki"
+        subtitle="Izdelki, ki bi vam lahko bili všeč"
+        items={similar}
+      />
     </div>
   );
 }
