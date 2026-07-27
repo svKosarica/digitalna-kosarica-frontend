@@ -61,7 +61,7 @@ export default async function ProductDetailPage({ params }: Props) {
             <ImageIcon className="size-14 sm:size-20 text-border" />
           )}
 
-          {discountPct > 0 && (
+          {discountPct != null && discountPct > 0 && (
             <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full bg-primary text-primary-foreground text-xs sm:text-sm font-bold tracking-tight">
               -{discountPct}%
             </div>
@@ -131,8 +131,10 @@ export default async function ProductDetailPage({ params }: Props) {
                   brandName: product.brand?.name ?? "",
                   imageUrl: product.imageUrl,
                   price,
-                  oldPrice: oldPrice !== price ? oldPrice : undefined,
-                  discountPct: discountPct > 0 ? discountPct : undefined,
+                  oldPrice:
+                    oldPrice != null && oldPrice !== price ? oldPrice : undefined,
+                  discountPct:
+                    discountPct != null && discountPct > 0 ? discountPct : undefined,
                   storeName,
                 }}
               />

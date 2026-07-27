@@ -46,12 +46,14 @@ export default async function Page() {
         title="Najvišji popusti"
         subtitle="Današnja selekcija prihrankov"
         items={discounts}
+        moreHref="/top-discounts"
       />
 
       <ProductScrollSection
         title="Najbolj priljubljeni"
         subtitle="Izdelki, ki jih kupci najpogosteje kupujejo"
         items={popular}
+        moreHref="/popular"
       />
 
       <ProductScrollSection

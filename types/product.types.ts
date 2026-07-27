@@ -24,13 +24,23 @@ export interface DiscountItem {
   product: Product;
   store: Store;
   price: number;
-  oldPrice: number;
+  // Null for products the API has never seen at a different price (no history
+  // yet). Negative discountPct means the product got *more expensive* — the
+  // most-popular list returns all three cases mixed together.
+  oldPrice: number | null;
   pricePerUnit: number;
-  discountPct: number;
+  discountPct: number | null;
   isAvailable: boolean;
   cardDiscount: boolean;
   url: string;
 }
+
+/**
+ * Time window for the highest-discount list.
+ * CURRENT = discounted right now, DAILY = discount appeared today,
+ * WEEKLY = appeared in the last 7 days (the API default).
+ */
+export type DiscountWindow = "CURRENT" | "DAILY" | "WEEKLY";
 
 export interface SearchResponse {
   products: DiscountItem[];

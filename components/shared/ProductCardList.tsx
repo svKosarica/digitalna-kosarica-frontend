@@ -18,6 +18,7 @@ interface ProductCardListProps {
   discountPct?: number;
   currency?: string;
   stores?: StoreName[];
+  badgeVariant?: "discount" | "increase";
 }
 
 export default function ProductCardList({
@@ -31,6 +32,7 @@ export default function ProductCardList({
   discountPct,
   currency = "€",
   stores = [],
+  badgeVariant = "discount",
 }: ProductCardListProps) {
   const [imgError, setImgError] = useState(false);
   const [added, setAdded] = useState(false);
@@ -84,11 +86,20 @@ export default function ProductCardList({
           <ImageIcon className="size-10 text-border" />
         )}
 
-        {discountPct != null && discountPct > 0 && (
-          <div className="absolute -top-1 -left-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[9px] font-bold tracking-tight">
-            -{discountPct}%
-          </div>
-        )}
+        {discountPct != null &&
+          (badgeVariant === "increase" ? discountPct < 0 : discountPct > 0) && (
+            <div
+              className={`absolute -top-1 -left-1 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-tight ${
+                badgeVariant === "increase"
+                  ? "bg-destructive text-destructive-foreground"
+                  : "bg-primary text-primary-foreground"
+              }`}
+            >
+              {badgeVariant === "increase"
+                ? `+${Math.round(Math.abs(discountPct))}%`
+                : `-${discountPct}%`}
+            </div>
+          )}
 
         {stores.length > 0 && STORE_LOGOS[stores[0]] && (
           <div className="absolute -bottom-1 -right-1 sm:hidden">
@@ -114,8 +125,11 @@ export default function ProductCardList({
           </h4>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 sm:hidden">
-          <div className="flex items-baseline gap-1.5">
+        {/* Stacked, not a justify-between row: with a wrapping row the button
+            only dropped below the price when an old price made the row wide
+            enough, so rows without one looked different. */}
+        <div className="flex flex-col items-start gap-2 sm:hidden">
+          <div className="flex flex-wrap items-baseline gap-1.5">
             <span className="text-lg font-bold text-foreground">
               {price} {currency}
             </span>

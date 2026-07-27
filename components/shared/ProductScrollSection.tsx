@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "@/components/shared/ProductCard";
 import { normalizeStoreName } from "@/lib/utils";
 import type { DiscountItem } from "@/types/product.types";
@@ -11,6 +12,11 @@ interface ProductScrollSectionProps {
   subtitle: string;
   items: DiscountItem[];
   badgeVariant?: "discount" | "increase";
+  /**
+   * Full listing page for this section. Optional because not every section has
+   * one — "Največje podražitve" and "Podobni izdelki" have no destination.
+   */
+  moreHref?: string;
 }
 
 export default function ProductScrollSection({
@@ -18,6 +24,7 @@ export default function ProductScrollSection({
   subtitle,
   items,
   badgeVariant = "discount",
+  moreHref,
 }: ProductScrollSectionProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -51,10 +58,23 @@ export default function ProductScrollSection({
   return (
     <section>
       <div className="px-4 sm:px-6 pt-8 flex items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl sm:text-[30px] font-semibold text-foreground">
-            {title}
-          </h2>
+        <div className="min-w-0">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h2 className="text-2xl sm:text-[30px] font-semibold text-foreground">
+              {title}
+            </h2>
+            {/* Beside the title rather than in the arrow group, which is hidden
+                below md — this stays reachable on mobile. */}
+            {moreHref && (
+              <Link
+                href={moreHref}
+                className="group inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:gap-2.5 transition-all whitespace-nowrap"
+              >
+                Več izdelkov
+                <ArrowRight className="size-4" />
+              </Link>
+            )}
+          </div>
           <p className="text-[14px] font-medium text-muted-foreground uppercase tracking-wider mt-1">
             {subtitle}
           </p>
@@ -97,7 +117,7 @@ export default function ProductScrollSection({
               productName={item.product.name}
               price={item.price?.toString() ?? ""}
               oldPrice={item.oldPrice?.toString() ?? ""}
-              discountPct={item.discountPct}
+              discountPct={item.discountPct ?? undefined}
               badgeVariant={badgeVariant}
               stores={
                 item.store?.name && normalizeStoreName(item.store.name)

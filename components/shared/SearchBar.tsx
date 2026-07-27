@@ -39,7 +39,9 @@ export function SearchBar() {
   }
 
   return (
-    <div className="relative w-48 sm:w-64 md:w-80">
+    // max-w rather than a fixed w so the field narrows on very small screens
+    // instead of forcing the header icons out of view.
+    <div className="relative w-full max-w-48 sm:max-w-64 md:max-w-80">
       <Search
         size={16}
         className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none"

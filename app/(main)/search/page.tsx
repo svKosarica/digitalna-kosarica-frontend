@@ -98,7 +98,11 @@ export default async function SearchPage({ searchParams }: Props) {
                   ? item.oldPrice.toFixed(2)
                   : undefined
               }
-              discountPct={item.discountPct > 0 ? item.discountPct : undefined}
+              discountPct={
+                item.discountPct != null && item.discountPct > 0
+                  ? item.discountPct
+                  : undefined
+              }
               stores={
                 item.store?.name && normalizeStoreName(item.store.name)
                   ? [normalizeStoreName(item.store.name)!]
@@ -122,7 +126,11 @@ export default async function SearchPage({ searchParams }: Props) {
                   ? item.oldPrice.toFixed(2)
                   : undefined
               }
-              discountPct={item.discountPct > 0 ? item.discountPct : undefined}
+              discountPct={
+                item.discountPct != null && item.discountPct > 0
+                  ? item.discountPct
+                  : undefined
+              }
               stores={
                 item.store?.name && normalizeStoreName(item.store.name)
                   ? [normalizeStoreName(item.store.name)!]
