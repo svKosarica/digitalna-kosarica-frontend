@@ -24,7 +24,7 @@ Every task's requirements implicitly include this section.
 - **Preserve the API's array order** when rendering categories. No alphabetical sort, no hardcoded id table — the category set will drift.
 - **Do not change `STORE_MAP`.** `{1: spar, 2: lidl, 3: mercator, 4: hofer}` is correct; the backend's Swagger text is stale.
 - **Do not add an age gate or alcohol warning** to `Alkoholne pijače` (22) — it deliberately contains 79 alcohol-free products.
-- **Slovenian declension:** never interpolate a category name into a grammatical case (`"Vse v Meso"` is wrong — locative would be `"v Mesu"`). Only the suffix form `` `${name} — vse` `` is allowed.
+- **Slovenian declension:** never interpolate a category name into a grammatical case (`"Vse v Meso"` is wrong — locative would be `"v Mesu"`). Only the suffix form `` `${name} - vse` `` is allowed.
 - **Do not add test files or test tooling.**
 - Existing item classes to reuse verbatim: `font-semibold text-foreground focus:bg-secondary focus:text-foreground`.
 
@@ -515,7 +515,7 @@ Insert immediately after the closing `</Select>` of the store select and before 
                     value={String(parent.id)}
                     className={cn(ITEM_CLASS, "pl-6")}
                   >
-                    {parent.name} — vse
+                    {parent.name} - vse
                   </SelectItem>
                   {children.map((child) => (
                     <SelectItem
@@ -539,9 +539,9 @@ Insert immediately after the closing `</Select>` of the store select and before 
 
 Then `pnpm dev`, open `/search?q=mleko` and open the dropdown:
 
-1. **Vse kategorije** first and selected; top-level categories in API order; each parent with children shows as a muted heading, then an indented **`<name> — vse`** row, then its indented children; the 12 childless parents show as plain unindented rows.
+1. **Vse kategorije** first and selected; top-level categories in API order; each parent with children shows as a muted heading, then an indented **`<name> - vse`** row, then its indented children; the 12 childless parents show as plain unindented rows.
 2. The list scrolls inside the dropdown rather than covering the results.
-3. Pick **Meso — vse** → `?q=mleko&categories=3`, results refetch, no `page` param.
+3. Pick **Meso - vse** → `?q=mleko&categories=3`, results refetch, no `page` param.
 4. Pick **Ribe** → `?categories=21`.
 5. Pick **Vse kategorije** → the `categories` param is **deleted**, not emptied.
 6. Load `?categories=999` → trigger reads "Vse kategorije", results empty; picking **Vse kategorije** clears the stale param.
@@ -554,7 +554,7 @@ Then `pnpm dev`, open `/search?q=mleko` and open the dropdown:
 git add components/shared/SearchFilters.tsx "app/(main)/search/page.tsx"
 git commit -m "feat: add the category select to the search filter bar
 
-Parents stay selectable as '<name> — vse' under a SelectLabel heading:
+Parents stay selectable as '<name> - vse' under a SelectLabel heading:
 the heading gives the group an accessible name and the suffix makes the
 server-side rollup self-evident, where bare indentation told nobody
 anything. Suffix form also avoids declining 19 Slovenian names.
@@ -659,7 +659,7 @@ Expected: lint clean, build succeeding with no type errors.
 
 1. **< 640px:** both selects full width and stacked. No horizontal page scroll at 320px.
 2. **≥ 640px:** both selects on one row with the switches — store 160px, category 180px. The switches may wrap to a second line near 768px; that is the pre-existing `sm:flex-wrap` behaviour and is fine.
-3. Dropdown at 320px: never extends past the viewport edge, scrolls internally, and a long name like "Sezonsko / Posebni izdelki — vse" wraps rather than being clipped.
+3. Dropdown at 320px: never extends past the viewport edge, scrolls internally, and a long name like "Sezonsko / Posebni izdelki - vse" wraps rather than being clipped.
 4. With that long name selected, the trigger truncates to one line with an ellipsis rather than overflowing.
 5. At a short viewport (~400px tall), the dropdown fits and scrolls — the `min()` clamp working.
 
@@ -685,7 +685,7 @@ Backend: #27 (API), #28 (map expansion)
 ## Notes for review
 
 - The first commit is an **independent fix** for a pre-existing bug: `updateParam` preserved `page`, so changing any filter left the user on a stale page of a shorter result set. It affects the store, sort, order and switch filters too, and can be reverted on its own.
-- Parents render as `<name> — vse` under a `SelectLabel` heading rather than relying on indentation, which conveyed the rollup to nobody and left screen readers with a flat 36-item list.
+- Parents render as `<name> - vse` under a `SelectLabel` heading rather than relying on indentation, which conveyed the rollup to nobody and left screen readers with a flat 36-item list.
 - The coverage hint shows whenever a category is active, not only on an empty result set — at 56.3% category coverage for Lidl a filtered search can look complete while hiding half the shelf.
 
 ## Verification
@@ -711,7 +711,7 @@ EOF
 | 4. Param parsing, `undefined` not `[]`, `Promise.all` | 4, 5 |
 | 4. Coverage hint, unconditional when active | 6 |
 | 5. Page reset in `updateParam` | 1 |
-| 5. Dropdown structure, label + `— vse`, declension | 5 |
+| 5. Dropdown structure, label + `- vse`, declension | 5 |
 | 5. Raw value / stale-id recovery | 5 |
 | 5. Handler deletes rather than empties the param | 5 |
 | 6. Responsive: stacked below `sm`, `min()` max-h, `max-w`, truncation | 5 (implementation), 7 (verification) |

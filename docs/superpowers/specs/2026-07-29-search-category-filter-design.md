@@ -209,11 +209,11 @@ Placed after the store select and before the switches.
 │ Sadje in Zelenjava          │  SelectItem 1          ← childless: plain row
 │ Mlečni izdelki              │  SelectItem 2
 │ MESO                        │  SelectLabel           ← group heading
-│    Meso — vse               │  SelectItem 3   pl-6   ← the rollup
+│    Meso - vse               │  SelectItem 3   pl-6   ← the rollup
 │    Meso & mesni izdelki     │  SelectItem 20  pl-6
 │    Ribe                     │  SelectItem 21  pl-6
 │ PIJAČE                      │  SelectLabel
-│    Pijače — vse             │  SelectItem 4   pl-6
+│    Pijače - vse             │  SelectItem 4   pl-6
 │    Alkoholne pijače         │  SelectItem 22  pl-6
 │    Brezalkoholne pijače     │  SelectItem 23  pl-6
 │ …                           │
@@ -221,7 +221,7 @@ Placed after the store select and before the switches.
 ```
 
 - A parent **with** children renders as a `SelectGroup`: a `SelectLabel` carrying the parent
-  name, then the parent itself as a selectable `SelectItem` labelled `` `${name} — vse` ``, then
+  name, then the parent itself as a selectable `SelectItem` labelled `` `${name} - vse` ``, then
   its children. All items inside a group get `pl-6`; the label keeps `SelectLabel`'s default
   `px-2`.
 - A parent **without** children renders as a plain `SelectItem` at default padding, outside any
@@ -230,15 +230,15 @@ Placed after the store select and before the switches.
   selectable parent row would kill the rollup and strand the 12 childless top-level categories
   as dead rows.
 
-**Why the label + `— vse` rename rather than bare indentation.** Two problems with indentation
+**Why the label + `- vse` rename rather than bare indentation.** Two problems with indentation
 alone: nothing tells a sighted user that picking "Meso" also returns fish, and a `SelectGroup`
 with no `SelectLabel` is a group with no accessible name — a screen reader hears 36 flat items
 with no parent/child relationship, because `pl-6` is pure decoration. The heading supplies the
-group's accessible name and the `— vse` suffix makes the rollup self-evident.
+group's accessible name and the `- vse` suffix makes the rollup self-evident.
 
 **Slovenian declension.** `"Vse v Meso"` is ungrammatical — the locative would be `"v Mesu"` —
 and correctly declining 19 category names does not belong in a template. The
-`` `${name} — vse` `` suffix pattern sidesteps grammatical case entirely and reads correctly for
+`` `${name} - vse` `` suffix pattern sidesteps grammatical case entirely and reads correctly for
 all 19.
 
 - `"Vse kategorije"` is the first item, `value="all"`, and the default. Both it and the trigger
@@ -300,7 +300,7 @@ in bar height. At 320px there is only ~264px inside the card, so side-by-side wo
 - `max-w-[calc(100vw-2rem)]` so a long name can never push the popper past the viewport edge.
   Radix's popper viewport carries `min-w-[var(--radix-select-trigger-width)]`, so content can
   grow wider than the trigger; the content also has `overflow-x-hidden`.
-- Item text keeps default wrapping. On a narrow phone "Sezonsko / Posebni izdelki — vse" may
+- Item text keeps default wrapping. On a narrow phone "Sezonsko / Posebni izdelki - vse" may
   wrap to two lines inside the dropdown — accepted, still readable, and preferable to truncating
   a name the user is choosing between.
 
@@ -377,7 +377,7 @@ being introduced here; `buildCategoryTree` is a pure function specifically so it
 unit-tested later.
 
 - Dropdown renders "Vse kategorije" first and selected by default; parents with children appear
-  as a heading plus a `— vse` row plus indented children; childless parents appear as plain rows;
+  as a heading plus a `- vse` row plus indented children; childless parents appear as plain rows;
   order matches the API's.
 - Selecting a category sets `?categories=<id>` and refetches; selecting "Vse kategorije" removes
   the param entirely rather than setting it empty.

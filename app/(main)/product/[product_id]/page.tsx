@@ -170,7 +170,7 @@ export default async function ProductDetailPage({ params }: Props) {
       </section>
 
       <ProductScrollSection
-        title="Podobni izdelki"
+        title="Sorodni izdelki"
         subtitle="Izdelki, ki bi vam lahko bili všeč"
         items={similar}
       />

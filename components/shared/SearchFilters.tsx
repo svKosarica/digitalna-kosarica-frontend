@@ -162,7 +162,7 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
                     value={String(parent.id)}
                     className={cn(ITEM_CLASS, "pl-6")}
                   >
-                    {parent.name} — vse
+                    {parent.name} - vse
                   </SelectItem>
                   {children.map((child) => (
                     <SelectItem
