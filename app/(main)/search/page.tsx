@@ -43,6 +43,13 @@ export default async function SearchPage({ searchParams }: Props) {
     ? params.stores.split(",").map(Number).filter(Boolean)
     : ALL_STORE_IDS;
 
+  // Parsed as an array even though the UI is single-select, so the wire format
+  // is multi-select-ready. filter(Boolean) drops the NaN from ?categories=abc
+  // and the 0 from a hand-edited URL.
+  const categoryIds = typeof params.categories === "string"
+    ? params.categories.split(",").map(Number).filter(Boolean)
+    : [];
+
   const isAvailable = params.available !== "false";
   const cardDiscount = params.cardDiscount === "true";
   const currentPage = Math.max(0, parseInt(typeof params.page === "string" ? params.page : "0", 10) || 0);
@@ -56,6 +63,9 @@ export default async function SearchPage({ searchParams }: Props) {
     isAvailable,
     cardDiscount,
     storeIds,
+    // undefined, not [] — omitted means "every category" server-side. Sending
+    // all 36 ids would be wrong: it excludes uncategorized products.
+    categoryIds: categoryIds.length ? categoryIds : undefined,
   });
 
   const results = response.products;
