@@ -19,12 +19,21 @@ multi-select later without a migration.
 
 | File | Change |
 | --- | --- |
-| `types/search.types.ts` | Add `categoryIds?: number[]` to `SearchRequest`. Add `Category`. |
+| `types/search.types.ts` | Add `categoryIds?: number[]` to `SearchRequest`. Add `Category`. Add `ALL_CATEGORIES_LABEL`. |
 | `types/product.types.ts` | Add `categoryIds: number[]` to `Product`. |
 | `lib/utils.ts` | Add `buildCategoryTree`. |
 | `actions/category.actions.ts` | **New.** Server action wrapping `GET /categories`. |
-| `app/(main)/search/page.tsx` | Parse `categories` param, fetch category list, pass both down. |
+| `app/(main)/search/page.tsx` | Parse `categories` param, fetch category list, pass both down, render coverage hint. |
 | `components/shared/SearchFilters.tsx` | Accept `categories` prop, add the category `Select`, fix page reset. |
+
+## Commit order on the branch
+
+Two commits, deliberately separate:
+
+1. **`fix: reset pagination when a search filter changes`** — the `updateParam` change alone.
+   This repairs a pre-existing bug affecting the store, sort, order and switch filters and has
+   nothing to do with categories. Separate so it is reviewable and revertable on its own.
+2. **`feat: filter search results by category`** — everything else.
 
 ## 1. Types
 
@@ -42,12 +51,20 @@ export interface Category {
   parentCategoryId: number | null;
   name: string;
 }
+
+/**
+ * Shared by the trigger placeholder and the "all" item label. These MUST stay
+ * identical — the stale-id recovery in SearchFilters depends on an unknown id
+ * rendering the placeholder and being visually indistinguishable from "all".
+ */
+export const ALL_CATEGORIES_LABEL = "Vse kategorije";
 ```
 
 `types/product.types.ts` — add `categoryIds: number[]` to `Product`. Ascending, and it may
 contain a parent **and** its child (`[3, 20]`), so it is not a breadcrumb and not one-id-per-
-product. Empty array when no store files the product under any category. Type-only change for
-now; nothing renders it. It is what a future category-chip on a product card would use.
+product. Empty array when no store files the product under any category. Nothing renders it in
+v1; it exists so the rollup can be verified (see Verification) and is what a future category
+chip on a product card would use.
 
 ## 2. Server action — `actions/category.actions.ts`
 
@@ -99,8 +116,8 @@ buildCategoryTree(categories: Category[]): Array<{ parent: Category; children: C
   the category set will drift and a hardcoded list would rot.
 - A child whose `parentCategoryId` matches no returned parent is **dropped**, not rendered as
   an orphan.
-- A parent with no children yields `children: []` and renders as a plain row. 12 of the 19
-  top-level categories currently have no children.
+- A parent with no children yields `children: []`. 12 of the 19 top-level categories currently
+  have none.
 - Pure function, no React import, so it is unit-testable independently of the component.
 
 ## 4. `app/(main)/search/page.tsx`
@@ -132,9 +149,26 @@ be wrong. `JSON.stringify` drops the `undefined` key.
 <SearchFilters categories={categories} />
 ```
 
-Empty state gains one muted line, rendered **only** when `categoryIds.length > 0`:
+Latency is `max(search, categories)`, not the sum. With a 24h cache the categories call is
+almost always warm, but note the new coupling: a pathologically slow `/categories` would now
+slow the search page. Acceptable given the cache; `app/(main)/search/loading.tsx` already
+covers the render gap.
+
+### Coverage hint
+
+One muted line under the result count in `<header>`, rendered whenever
+`categoryIds.length > 0` — empty results or not:
 
 > *Nekateri izdelki še niso razvrščeni v kategorije.*
+
+**Why unconditional, not empty-state-only.** The empty state is the case where the user already
+knows something is off. The dangerous case is the plausible one: a Lidl shopper filters to
+"Mlečni izdelki", sees 14 results and concludes that is all the yoghurt Lidl carries. At 56.3%
+coverage nearly half is missing and nothing else on screen says so. A warning that fires only at
+zero results is silent exactly when it matters most.
+
+Rendering it in the header means one render site covering both cases — the empty state sits
+below it and needs no copy of its own.
 
 ## 5. `components/shared/SearchFilters.tsx`
 
@@ -142,7 +176,7 @@ Signature becomes `SearchFilters({ categories }: { categories: Category[] })`. S
 `"use client"`, still driven entirely by URL search params via `router.replace` — no new state
 management.
 
-### Page reset
+### Page reset (commit 1)
 
 `updateParam` deletes `page` whenever the changed key is neither `page` nor `view`:
 
@@ -160,15 +194,55 @@ most, but the fix belongs in `updateParam` for all filters rather than special-c
 The mount `useEffect` that seeds `view` builds its own `URLSearchParams` and does not go through
 `updateParam`, so it is unaffected.
 
-### The category Select
+`updateParam` keeps Next's default scroll-to-top, unlike `FilterPills`, which passes
+`scroll: false`. Knowingly left alone: a filter change now resets to page 0, so returning to the
+top of the results is the correct behaviour here even though the two components differ.
+
+### Dropdown structure (commit 2)
 
 Placed after the store select and before the switches.
 
-- Each parent-plus-children cluster wrapped in `SelectGroup`, **no `SelectLabel`**. Every
-  category — parent and child — is a selectable `SelectItem`; children indented `pl-6`. Using
-  `SelectLabel` for parents would make them non-selectable, killing the rollup feature and
-  turning the 12 childless top-level categories into dead rows.
-- `"Vse kategorije"` is the first item, `value="all"`, and the default.
+```
+┌─────────────────────────────┐
+│ Vse kategorije              │  SelectItem "all"      ← default
+├─────────────────────────────┤
+│ Sadje in Zelenjava          │  SelectItem 1          ← childless: plain row
+│ Mlečni izdelki              │  SelectItem 2
+│ MESO                        │  SelectLabel           ← group heading
+│    Meso — vse               │  SelectItem 3   pl-6   ← the rollup
+│    Meso & mesni izdelki     │  SelectItem 20  pl-6
+│    Ribe                     │  SelectItem 21  pl-6
+│ PIJAČE                      │  SelectLabel
+│    Pijače — vse             │  SelectItem 4   pl-6
+│    Alkoholne pijače         │  SelectItem 22  pl-6
+│    Brezalkoholne pijače     │  SelectItem 23  pl-6
+│ …                           │
+└─────────────────────────────┘
+```
+
+- A parent **with** children renders as a `SelectGroup`: a `SelectLabel` carrying the parent
+  name, then the parent itself as a selectable `SelectItem` labelled `` `${name} — vse` ``, then
+  its children. All items inside a group get `pl-6`; the label keeps `SelectLabel`'s default
+  `px-2`.
+- A parent **without** children renders as a plain `SelectItem` at default padding, outside any
+  group. Groups and plain rows interleave in API order.
+- Every category stays selectable, parents included. Using `SelectLabel` *instead of* a
+  selectable parent row would kill the rollup and strand the 12 childless top-level categories
+  as dead rows.
+
+**Why the label + `— vse` rename rather than bare indentation.** Two problems with indentation
+alone: nothing tells a sighted user that picking "Meso" also returns fish, and a `SelectGroup`
+with no `SelectLabel` is a group with no accessible name — a screen reader hears 36 flat items
+with no parent/child relationship, because `pl-6` is pure decoration. The heading supplies the
+group's accessible name and the `— vse` suffix makes the rollup self-evident.
+
+**Slovenian declension.** `"Vse v Meso"` is ungrammatical — the locative would be `"v Mesu"` —
+and correctly declining 19 category names does not belong in a template. The
+`` `${name} — vse` `` suffix pattern sidesteps grammatical case entirely and reads correctly for
+all 19.
+
+- `"Vse kategorije"` is the first item, `value="all"`, and the default. Both it and the trigger
+  placeholder use `ALL_CATEGORIES_LABEL`.
 - Items reuse the existing item classes:
   `font-semibold text-foreground focus:bg-secondary focus:text-foreground`.
 - All labels in Slovenian, matching the rest of the bar.
@@ -180,10 +254,11 @@ Placed after the store select and before the switches.
 The `Select` value is the **raw** `categories` param when present, else `"all"`.
 
 Deliberate: a stale `?categories=999` matches no item, so the trigger falls back to the
-placeholder — whose text is identical to the "all" label, so it is visually indistinguishable —
-and picking "Vse kategorije" *is* a value change, so `onValueChange` fires and clears the param.
-Coercing an unknown id to `"all"` first would render the same but leave the user unable to clear
-it, because Radix does not fire `onValueChange` when re-selecting the current value.
+placeholder — identical text to the "all" label via `ALL_CATEGORIES_LABEL`, so visually
+indistinguishable — and picking "Vse kategorije" *is* a value change, so `onValueChange` fires
+and clears the param. Coercing an unknown id to `"all"` first would render the same but leave
+the user unable to clear it, because Radix does not fire `onValueChange` when re-selecting the
+current value.
 
 ### Handler
 
@@ -197,32 +272,20 @@ Selecting "Vse kategorije" **deletes** the param rather than setting it to an em
 
 ## 6. Responsive behaviour
 
-The bar must work down to 320px. Three concerns, each addressed explicitly.
+The bar must work down to 320px.
 
 ### Trigger layout
 
-Adding a second full-width select would give mobile a fourth stacked block and make the bar
-noticeably taller. Instead, wrap both selects in a wrapper that collapses at `sm`, sitting where
-the store select sits today:
+Both selects are full width and stacked below `sm`, side by side from `sm` — the store select's
+existing pattern, extended to a second control:
 
-```tsx
-<div className="flex flex-col gap-3 min-[480px]:flex-row min-[480px]:gap-2 sm:contents">
-  {/* store select trigger:    w-full min-[480px]:flex-1 min-[480px]:min-w-0 sm:w-[160px] sm:flex-none */}
-  {/* category select trigger: w-full min-[480px]:flex-1 min-[480px]:min-w-0 sm:w-[180px] sm:flex-none */}
-</div>
-```
+- store trigger: `w-full sm:w-[160px]` (unchanged)
+- category trigger: `w-full sm:w-[180px]`
 
-- **< 480px:** both selects full width, stacked. At 320px the available width inside the card
-  is ~264px; side-by-side would put "Vse kategorije" in ~128px and truncate it, so stacked is
-  correct here.
-- **480px–639px:** side by side, each `flex-1 min-w-0`. `min-w-0` is required for the trigger's
-  built-in `line-clamp-1` on the value to actually truncate inside a flex row.
-- **≥ 640px (`sm`):** `sm:contents` removes the wrapper from the layout entirely, so both
-  triggers participate in the parent flex row exactly as the store select does today. Desktop
-  layout is unchanged apart from the new 180px trigger.
-
-Tailwind v4 is in use, so the `min-[480px]:` arbitrary variant is available. `display: contents`
-is broadly supported.
+No wrapper element and no intermediate breakpoint. An earlier draft put the two selects
+side-by-side from 480px via `sm:contents`; dropped as arbitrary complexity for a marginal gain
+in bar height. At 320px there is only ~264px inside the card, so side-by-side would truncate
+"Vse kategorije" anyway.
 
 ### Dropdown sizing
 
@@ -230,33 +293,31 @@ is broadly supported.
 - `max-h-[min(320px,var(--radix-select-content-available-height))]` — **not** a bare
   `max-h-[320px]`. `SelectContent` already ships
   `max-h-(--radix-select-content-available-height)`; two `max-h` utilities have equal
-  specificity, so which one wins depends on their order in the generated stylesheet, not on the
+  specificity, so which wins depends on their order in the generated stylesheet, not on the
   order in the class string. The `min()` form composes both intents and is order-independent.
-  With 36 rows the list scrolls rather than covering the results, and on a short viewport
-  (phone in landscape) it still cannot exceed the space Radix measured.
+  The list scrolls rather than covering the results, and on a short viewport (phone in
+  landscape) it still cannot exceed the space Radix measured.
 - `max-w-[calc(100vw-2rem)]` so a long name can never push the popper past the viewport edge.
-  Radix's popper viewport carries `min-w-[var(--radix-select-trigger-width)]`, so the content
-  can grow wider than the trigger; the content also has `overflow-x-hidden`.
-- Item text keeps default wrapping. On a narrow phone
-  "Sezonsko / Posebni izdelki" may wrap to two lines inside the dropdown — accepted, still
-  readable, and preferable to truncating a name the user is choosing between.
+  Radix's popper viewport carries `min-w-[var(--radix-select-trigger-width)]`, so content can
+  grow wider than the trigger; the content also has `overflow-x-hidden`.
+- Item text keeps default wrapping. On a narrow phone "Sezonsko / Posebni izdelki — vse" may
+  wrap to two lines inside the dropdown — accepted, still readable, and preferable to truncating
+  a name the user is choosing between.
 
 ### Selected-value truncation
 
-No extra work: `SelectTrigger` already carries
-`*:data-[slot=select-value]:line-clamp-1`, which truncates with an ellipsis. It needs the
-`min-w-0` from the trigger layout above to take effect in a flex row; inside the fixed
-`sm:w-[180px]` desktop trigger it works as-is.
+No extra work: `SelectTrigger` already carries `*:data-[slot=select-value]:line-clamp-1`, which
+truncates with an ellipsis. Inside the full-width mobile trigger and the fixed `sm:w-[180px]`
+desktop trigger it works as-is.
 
-### Empty-state hint
+### Coverage hint
 
-`text-sm text-center max-w-xs px-4` so the Slovenian sentence wraps cleanly on a phone instead
-of running to the container edge.
+`text-sm` muted, in the header's normal flow, so it wraps cleanly on a phone.
 
 ### Desktop row wrapping
 
 The parent row is already `sm:flex-wrap`. The extra 180px trigger may push the switches onto a
-second line on ~768px tablets. That is handled by the existing wrap and is acceptable.
+second line on ~768px tablets. Handled by the existing wrap; acceptable.
 
 ## 7. Gotchas carried forward
 
@@ -266,7 +327,7 @@ spar 95.9%, merkator 87.2%, hofer 77.8%, lidl 56.3%. Selecting "Mlečni izdelki"
 hide a Lidl yoghurt that has no category link yet. PR #28 improves coverage but it will never be
 100%. Consequences: the result count **will** drop when a category is selected, sometimes a lot,
 and that is expected rather than a bug to chase. Never default to a selected category. The
-empty-state hint exists so a thin result set does not read as broken.
+coverage hint exists so an incomplete result set does not read as authoritative.
 
 **`Alkoholne pijače` (22) includes 79 alcohol-free products** — Heineken 0.0%, alcohol-free
 sparkling wine, radlers, mocktails. This is Spar's own shelving, faithfully recorded, documented
@@ -292,10 +353,22 @@ recursive backend expansion.
   already reported. Do not "fix" the frontend to match Swagger.
 - No `mercator` / `merkator` spelling cleanup (`normalizeStoreName` in `lib/utils.ts`).
 - No category chips on product cards.
-- No multi-select. That would need a `Popover` with a checkbox list, an "N izbranih" trigger
-  label and a clear-all affordance — shadcn's `Select` is not built for multi-value. Revisit if
-  analytics show users re-running the same search with different categories back to back.
-- No third indent level.
+- No `usePathname()` refactor of `SearchFilters` — it hardcodes `/search`, as `FilterPills`'
+  header comment notes, but that is unrelated to this change.
+
+### Documented upgrade path
+
+Not commitments, just the two things to reach for if v1 disappoints:
+
+- **Combobox instead of `Select`.** With group headings the list runs ~43 rows. A `Popover` +
+  `Command` with type-to-filter beats scrolling outright — typing "mle" jumps to Mlečni izdelki
+  instead of scrolling past 19 headings. `Select` is right for v1 (no new component, matches the
+  store filter, 19 top-level rows scroll tolerably), but this is the first upgrade if the
+  dropdown feels bad in the hand.
+- **Multi-select.** Needs a `Popover` with a checkbox list, an "N izbranih" trigger label and a
+  clear-all affordance — shadcn's `Select` is not built for multi-value. The wire format already
+  supports it (max 64 ids). The rollup covers the common sibling case, so this only matters for
+  genuinely unrelated pairs like "Mlečni izdelki OR Pekovski izdelki".
 
 ## 9. Verification
 
@@ -303,20 +376,23 @@ Manual against production, since the repo has vitest configured but zero test fi
 being introduced here; `buildCategoryTree` is a pure function specifically so it can be
 unit-tested later.
 
-- Category list renders grouped, parents selectable with children indented, "Vse kategorije"
-  first and selected by default.
+- Dropdown renders "Vse kategorije" first and selected by default; parents with children appear
+  as a heading plus a `— vse` row plus indented children; childless parents appear as plain rows;
+  order matches the API's.
 - Selecting a category sets `?categories=<id>` and refetches; selecting "Vse kategorije" removes
   the param entirely rather than setting it empty.
 - **Parent rollup:** `q=meso` with `categories=3` returns products whose `product.categoryIds`
   include `20` or `21` but not `3` itself.
 - Combines with store, availability, card-discount and sorting (AND semantics).
+- Coverage hint appears whenever a category is active — with results and with zero results — and
+  is absent when no category is active.
 - `?categories=999` renders the empty state plus the hint, not an error, and is recoverable by
   picking "Vse kategorije".
 - `?categories=abc` and `?categories=` are parsed away safely.
 - Page resets to 0 when the category changes — and also when store, sort, order or either
   switch changes. Changing `view` does **not** reset the page.
 - `GET /categories` failing or returning 204 leaves only "Vse kategorije" and search still works.
-- Responsive: filter bar and dropdown usable at 320px, 375px, 480px, 640px and 768px. Selects
-  stack below 480px and sit side by side from 480px. Dropdown scrolls rather than covering
-  results, never exceeds the viewport horizontally, and a long selected name truncates in the
-  trigger rather than overflowing.
+- Responsive at 320px, 375px, 640px and 768px: selects stack below `sm` and sit side by side
+  from `sm`; the dropdown scrolls rather than covering results, never exceeds the viewport
+  horizontally, and a long selected name truncates in the trigger rather than overflowing.
+- Screen reader announces each subcategory within its named parent group.
