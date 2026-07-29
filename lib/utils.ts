@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { StoreName } from "@/lib/store";
+import type { Category, CategoryTreeNode } from "@/types/search.types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -32,4 +33,33 @@ export function normalizeStoreName(apiName: string): StoreName | undefined {
     if (lower.includes(alias)) return store;
   }
   return undefined;
+}
+
+/**
+ * Turns the flat GET /categories array into one entry per top-level category.
+ *
+ * API array order is preserved at both levels — the category set drifts, so
+ * never sort or hardcode it. A child whose parentCategoryId matches no
+ * top-level category is dropped rather than rendered as an orphan. The tree is
+ * exactly two levels deep; the backend asserts this.
+ */
+export function buildCategoryTree(categories: Category[]): CategoryTreeNode[] {
+  const childrenByParentId = new Map<number, Category[]>();
+
+  for (const category of categories) {
+    if (category.parentCategoryId === null) continue;
+    const siblings = childrenByParentId.get(category.parentCategoryId);
+    if (siblings) {
+      siblings.push(category);
+    } else {
+      childrenByParentId.set(category.parentCategoryId, [category]);
+    }
+  }
+
+  return categories
+    .filter((category) => category.parentCategoryId === null)
+    .map((parent) => ({
+      parent,
+      children: childrenByParentId.get(parent.id) ?? [],
+    }));
 }

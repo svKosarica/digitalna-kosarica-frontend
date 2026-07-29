@@ -10,6 +10,12 @@ export interface Product {
   title: string;
   unit: string;
   imageUrl: string;
+  /**
+   * Ascending. May contain a parent AND its subcategory (e.g. [3, 20]), so this
+   * is not a breadcrumb and not one-id-per-product. Empty when no store files
+   * the product under any category. Unused in the UI today.
+   */
+  categoryIds: number[];
 }
 
 export interface Store {
