@@ -11,6 +11,8 @@ export interface SearchRequest {
   storeIds?: number[];
   isAvailable: boolean;
   cardDiscount: boolean;
+  /** Omitted / null / [] all mean "every category". A parent id matches its children too. */
+  categoryIds?: number[];
 }
 
 export const STORE_MAP: Record<number, string> = {
@@ -19,3 +21,23 @@ export const STORE_MAP: Record<number, string> = {
   3: "mercator",
   4: "hofer",
 };
+
+/** Flat node as returned by GET /categories; the tree is expressed by parentCategoryId. */
+export interface Category {
+  id: number;
+  parentCategoryId: number | null;
+  name: string;
+}
+
+/** One top-level category with its subcategories. The tree is exactly two levels deep. */
+export interface CategoryTreeNode {
+  parent: Category;
+  children: Category[];
+}
+
+/**
+ * Shared by the trigger placeholder and the "all" item label. These MUST stay
+ * identical — stale-id recovery in SearchFilters depends on an unknown id
+ * rendering the placeholder and being visually indistinguishable from "all".
+ */
+export const ALL_CATEGORIES_LABEL = "Vse kategorije";

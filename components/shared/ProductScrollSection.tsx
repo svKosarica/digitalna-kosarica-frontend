@@ -14,7 +14,7 @@ interface ProductScrollSectionProps {
   badgeVariant?: "discount" | "increase";
   /**
    * Full listing page for this section. Optional because not every section has
-   * one — "Največje podražitve" and "Podobni izdelki" have no destination.
+   * one — "Največje podražitve" and "Sorodni izdelki" have no destination.
    */
   moreHref?: string;
 }

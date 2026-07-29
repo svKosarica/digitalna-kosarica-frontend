@@ -101,10 +101,10 @@ export function PriceHistoryChart({ data }: PriceHistoryChartProps) {
             type="button"
             onClick={() => setMonths(p.months)}
             className={cn(
-              "px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all active:scale-95",
+              "px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all active:scale-95 cursor-pointer",
               months === p.months
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-foreground hover:bg-secondary/70",
+                ? "bg-primary text-primary-foreground hover:bg-primary/85"
+                : "bg-secondary text-foreground hover:bg-primary/15 hover:text-primary",
             )}
           >
             {p.label}

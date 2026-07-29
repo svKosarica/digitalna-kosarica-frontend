@@ -1,9 +1,10 @@
 import { searchProducts } from "@/actions/search.actions";
+import { getCategories } from "@/actions/category.actions";
 import ProductCard from "@/components/shared/ProductCard";
 import ProductCardList from "@/components/shared/ProductCardList";
 import { Pagination } from "@/components/shared/Pagination";
 import { SearchFilters } from "@/components/shared/SearchFilters";
-import { normalizeStoreName } from "@/lib/utils";
+import { normalizeStoreName, productCountLabel } from "@/lib/utils";
 import type { FilterOption, SortOption } from "@/types/search.types";
 import { STORE_MAP } from "@/types/search.types";
 import { SearchX } from "lucide-react";
@@ -43,20 +44,36 @@ export default async function SearchPage({ searchParams }: Props) {
     ? params.stores.split(",").map(Number).filter(Boolean)
     : ALL_STORE_IDS;
 
+  // Parsed as an array even though the UI is single-select, so the wire format
+  // is multi-select-ready. The positive-integer check rejects the NaN from
+  // ?categories=abc, the 0 from a hand-edited URL, and non-integers/Infinity
+  // (e.g. ?categories=2.5 or ?categories=1e400) — Infinity matters because
+  // JSON.stringify turns it into a null array element, which can reach the
+  // backend's categoryIds as a null inside a List<Long>.
+  const categoryIds = typeof params.categories === "string"
+    ? params.categories.split(",").map(Number).filter((n) => Number.isInteger(n) && n > 0)
+    : [];
+
   const isAvailable = params.available !== "false";
   const cardDiscount = params.cardDiscount === "true";
   const currentPage = Math.max(0, parseInt(typeof params.page === "string" ? params.page : "0", 10) || 0);
 
-  const response = await searchProducts({
-    page: currentPage,
-    size: PAGE_SIZE,
-    query,
-    filter,
-    sortOption: order,
-    isAvailable,
-    cardDiscount,
-    storeIds,
-  });
+  const [response, categories] = await Promise.all([
+    searchProducts({
+      page: currentPage,
+      size: PAGE_SIZE,
+      query,
+      filter,
+      sortOption: order,
+      isAvailable,
+      cardDiscount,
+      storeIds,
+      // undefined, not [] — omitted means "every category" server-side. Sending
+      // all 36 ids would be wrong: it excludes uncategorized products.
+      categoryIds: categoryIds.length ? categoryIds : undefined,
+    }),
+    getCategories(),
+  ]);
 
   const results = response.products;
   const viewMode = params.view === "grid" ? "grid" : "list";
@@ -69,12 +86,17 @@ export default async function SearchPage({ searchParams }: Props) {
           Rezultati za &ldquo;{query}&rdquo;
         </h1>
         <p className="text-muted-foreground font-medium">
-          {response.allItems} {response.allItems === 1 ? "izdelek" : "izdelkov"} v {storeCount}{" "}
+          {productCountLabel(response.allItems)} v {storeCount}{" "}
           {storeCount === 1 ? "trgovini" : "trgovinah"}
         </p>
+        {categoryIds.length > 0 && (
+          <p className="mt-1 text-sm text-muted-foreground/80">
+            Nekateri izdelki še niso razvrščeni v kategorije.
+          </p>
+        )}
       </header>
 
-      <SearchFilters />
+      <SearchFilters categories={categories} />
 
       {results.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
