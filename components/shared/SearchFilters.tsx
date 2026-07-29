@@ -6,18 +6,29 @@ import { LayoutGrid, List } from "lucide-react";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { STORE_MAP } from "@/types/search.types";
-import { cn } from "@/lib/utils";
+import { ALL_CATEGORIES_LABEL, STORE_MAP } from "@/types/search.types";
+import type { Category } from "@/types/search.types";
+import { buildCategoryTree, cn } from "@/lib/utils";
 
 const ALL_STORE_IDS = Object.keys(STORE_MAP).map(Number);
 
-export function SearchFilters() {
+const ITEM_CLASS =
+  "font-semibold text-foreground focus:bg-secondary focus:text-foreground";
+
+interface SearchFiltersProps {
+  /** Flat list from GET /categories. Empty when the endpoint fails or returns 204. */
+  categories: Category[];
+}
+
+export function SearchFilters({ categories }: SearchFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -41,6 +52,16 @@ export function SearchFilters() {
   const selectedStores: number[] = stores
     ? stores.split(",").map(Number)
     : [];
+
+  const categoryTree = buildCategoryTree(categories);
+
+  // The raw param, deliberately not validated against `categories`. An unknown
+  // id matches no item, so the trigger falls back to the placeholder — same text
+  // as the "all" label — and picking "Vse kategorije" is then a real value
+  // change that clears the param. Coercing to "all" first would look identical
+  // but strand the user, since Radix does not fire onValueChange when
+  // re-selecting the current value.
+  const selectedCategory = searchParams.get("categories") ?? "all";
 
   const updateParam = useCallback(
     (key: string, value: string | null) => {
@@ -72,6 +93,10 @@ export function SearchFilters() {
     }
   }
 
+  function handleCategoryChange(val: string) {
+    updateParam("categories", val === "all" ? null : val);
+  }
+
   return (
     <div className="bg-secondary p-3 sm:p-4 rounded-xl border border-border/30">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
@@ -90,6 +115,56 @@ export function SearchFilters() {
                 <span className="capitalize">{STORE_MAP[id]}</span>
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+
+        {/* Category select */}
+        <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+          <SelectTrigger className="w-full sm:w-[180px] bg-card border-border text-foreground font-bold text-sm">
+            <SelectValue placeholder={ALL_CATEGORIES_LABEL} />
+          </SelectTrigger>
+          <SelectContent
+            position="popper"
+            sideOffset={4}
+            // `cn` is twMerge, so this max-h REPLACES SelectContent's own
+            // max-h-(--radix-select-content-available-height) rather than
+            // layering over it. min() keeps the viewport clamp; a bare
+            // max-h-[320px] would overflow a short viewport.
+            className="bg-card border-border max-h-[min(320px,var(--radix-select-content-available-height))] max-w-[calc(100vw-2rem)]"
+          >
+            <SelectItem value="all" className={ITEM_CLASS}>
+              {ALL_CATEGORIES_LABEL}
+            </SelectItem>
+            {categoryTree.map(({ parent, children }) =>
+              children.length === 0 ? (
+                <SelectItem key={parent.id} value={String(parent.id)} className={ITEM_CLASS}>
+                  {parent.name}
+                </SelectItem>
+              ) : (
+                <SelectGroup key={parent.id}>
+                  {/* Supplies the group's accessible name — without it a screen
+                      reader hears a flat list and pl-6 is pure decoration. */}
+                  <SelectLabel className="text-muted-foreground">{parent.name}</SelectLabel>
+                  {/* The rollup, spelled out. Suffix form avoids declining the
+                      name ("Vse v Meso" would be ungrammatical Slovenian). */}
+                  <SelectItem
+                    value={String(parent.id)}
+                    className={cn(ITEM_CLASS, "pl-6")}
+                  >
+                    {parent.name} — vse
+                  </SelectItem>
+                  {children.map((child) => (
+                    <SelectItem
+                      key={child.id}
+                      value={String(child.id)}
+                      className={cn(ITEM_CLASS, "pl-6")}
+                    >
+                      {child.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              ),
+            )}
           </SelectContent>
         </Select>
 
