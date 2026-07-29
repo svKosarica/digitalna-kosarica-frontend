@@ -4,7 +4,7 @@ import ProductCard from "@/components/shared/ProductCard";
 import ProductCardList from "@/components/shared/ProductCardList";
 import { Pagination } from "@/components/shared/Pagination";
 import { SearchFilters } from "@/components/shared/SearchFilters";
-import { normalizeStoreName } from "@/lib/utils";
+import { normalizeStoreName, productCountLabel } from "@/lib/utils";
 import type { FilterOption, SortOption } from "@/types/search.types";
 import { STORE_MAP } from "@/types/search.types";
 import { SearchX } from "lucide-react";
@@ -83,9 +83,14 @@ export default async function SearchPage({ searchParams }: Props) {
           Rezultati za &ldquo;{query}&rdquo;
         </h1>
         <p className="text-muted-foreground font-medium">
-          {response.allItems} {response.allItems === 1 ? "izdelek" : "izdelkov"} v {storeCount}{" "}
+          {productCountLabel(response.allItems)} v {storeCount}{" "}
           {storeCount === 1 ? "trgovini" : "trgovinah"}
         </p>
+        {categoryIds.length > 0 && (
+          <p className="mt-1 text-sm text-muted-foreground/80">
+            Nekateri izdelki še niso razvrščeni v kategorije.
+          </p>
+        )}
       </header>
 
       <SearchFilters categories={categories} />
