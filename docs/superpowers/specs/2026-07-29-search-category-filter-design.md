@@ -292,11 +292,11 @@ in bar height. At 320px there is only ~264px inside the card, so side-by-side wo
 - `position="popper" sideOffset={4}`.
 - `max-h-[min(320px,var(--radix-select-content-available-height))]` — **not** a bare
   `max-h-[320px]`. `SelectContent` already ships
-  `max-h-(--radix-select-content-available-height)`; two `max-h` utilities have equal
-  specificity, so which wins depends on their order in the generated stylesheet, not on the
-  order in the class string. The `min()` form composes both intents and is order-independent.
-  The list scrolls rather than covering the results, and on a short viewport (phone in
-  landscape) it still cannot exceed the space Radix measured.
+  `max-h-(--radix-select-content-available-height)`, and `cn` is `twMerge`, so a `max-h` passed
+  via `className` **replaces** the base one rather than layering over it. A bare `max-h-[320px]`
+  would therefore discard the viewport clamp entirely and overflow a short viewport. The `min()`
+  form keeps both intents in a single utility. The list scrolls rather than covering the results,
+  and on a phone in landscape it still cannot exceed the space Radix measured.
 - `max-w-[calc(100vw-2rem)]` so a long name can never push the popper past the viewport edge.
   Radix's popper viewport carries `min-w-[var(--radix-select-trigger-width)]`, so content can
   grow wider than the trigger; the content also has `overflow-x-hidden`.
