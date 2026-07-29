@@ -55,13 +55,20 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
 
   const categoryTree = buildCategoryTree(categories);
 
-  // The raw param, deliberately not validated against `categories`. An unknown
-  // id matches no item, so the trigger falls back to the placeholder — same text
-  // as the "all" label — and picking "Vse kategorije" is then a real value
-  // change that clears the param. Coercing to "all" first would look identical
-  // but strand the user, since Radix does not fire onValueChange when
-  // re-selecting the current value.
-  const selectedCategory = searchParams.get("categories") ?? "all";
+  const categoryParam = searchParams.get("categories");
+  const isKnownCategory =
+    categoryParam !== null &&
+    categories.some((category) => String(category.id) === categoryParam);
+
+  // Three states, and the empty string matters. No param -> "all", so "Vse
+  // kategorije" carries the checkmark. A known id -> that id. An unknown id
+  // (stale bookmark) -> "", which is the only value Radix treats as "show the
+  // placeholder"; passing the raw unknown id renders a blank trigger, and
+  // coercing it to "all" would strand the user because Radix does not fire
+  // onValueChange when re-selecting the current value. From "" , picking
+  // "Vse kategorije" IS a change, so it fires and clears the param.
+  const selectedCategory =
+    categoryParam === null ? "all" : isKnownCategory ? categoryParam : "";
 
   const updateParam = useCallback(
     (key: string, value: string | null) => {
