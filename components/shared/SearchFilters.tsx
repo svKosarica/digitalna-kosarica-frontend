@@ -50,6 +50,12 @@ export function SearchFilters() {
       } else {
         params.set(key, value);
       }
+      // Any filter change invalidates the current page offset — a user on page 4
+      // who narrows the results would otherwise land on an empty page 4.
+      // `view` is presentation-only, so it keeps your place.
+      if (key !== "page" && key !== "view") {
+        params.delete("page");
+      }
       router.replace(`/search?${params.toString()}`);
     },
     [router, searchParams],
