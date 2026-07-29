@@ -18,7 +18,11 @@ export async function getCategories(): Promise<Category[]> {
     const text = await res.text();
     if (!text) return []; // 204 No Content
 
-    return JSON.parse(text) as Category[];
+    const parsed = JSON.parse(text);
+    // `as Category[]` alone is compile-time only — a 200 whose body is `null`
+    // or an error object would otherwise escape as a non-array and crash
+    // buildCategoryTree downstream.
+    return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
     console.error("Categories request failed:", error);
     return [];
