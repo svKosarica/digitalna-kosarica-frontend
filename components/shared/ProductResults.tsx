@@ -25,6 +25,7 @@ function cardProps(item: DiscountItem) {
     imageUrl: item.product?.imageUrl ?? "",
     brandName: item.product?.brand?.name ?? "",
     productName: item.product?.title ?? item.product?.name ?? "",
+    unit: item.product?.unit ?? undefined,
     price: item.price?.toFixed(2) ?? "0.00",
     oldPrice:
       item.oldPrice != null && item.oldPrice !== item.price

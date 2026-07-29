@@ -13,6 +13,7 @@ interface ProductCardListProps {
   imageAlt?: string;
   brandName: string;
   productName: string;
+  unit?: string;
   price: string;
   oldPrice?: string;
   discountPct?: number;
@@ -27,6 +28,7 @@ export default function ProductCardList({
   imageAlt = "Product image",
   brandName,
   productName,
+  unit,
   price,
   oldPrice,
   discountPct,
@@ -117,9 +119,18 @@ export default function ProductCardList({
 
       <div className="grow min-w-0 flex flex-col gap-2">
         <div className="min-w-0">
-          <span className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
-            {brandName}
-          </span>
+          {/* Brand left, unit right — brand truncates so the unit stays pinned
+              to the edge on narrow rows instead of pushing out of the card. */}
+          <div className="flex items-baseline justify-between gap-2 mb-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground truncate min-w-0">
+              {brandName}
+            </span>
+            {unit && (
+              <span className="text-[10px] font-semibold text-muted-foreground shrink-0">
+                {unit}
+              </span>
+            )}
+          </div>
           <h4 className="text-base sm:text-xl font-extrabold text-foreground leading-tight truncate group-hover:text-primary transition-colors">
             {productName}
           </h4>

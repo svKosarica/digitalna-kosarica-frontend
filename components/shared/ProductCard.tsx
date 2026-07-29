@@ -19,6 +19,7 @@ interface ProductCardProps {
   imageAlt?: string;
   brandName: string;
   productName: string;
+  unit?: string;
   price: string;
   oldPrice?: string;
   discountPct?: number;
@@ -33,6 +34,7 @@ export default function ProductCard({
   imageAlt = "Product image",
   brandName,
   productName,
+  unit,
   price,
   oldPrice,
   discountPct,
@@ -133,9 +135,18 @@ export default function ProductCard({
       </div>
 
       <div className="grow">
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">
-          {brandName}
-        </p>
+        {/* Brand left, unit right — brand truncates so the unit stays pinned
+            to the edge on narrow cards instead of pushing out of the card. */}
+        <div className="flex items-baseline justify-between gap-2 mb-1">
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold truncate min-w-0">
+            {brandName}
+          </p>
+          {unit && (
+            <p className="text-[10px] text-muted-foreground font-semibold shrink-0">
+              {unit}
+            </p>
+          )}
+        </div>
 
         <TooltipProvider>
           <Tooltip>

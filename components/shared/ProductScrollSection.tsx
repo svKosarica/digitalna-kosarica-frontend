@@ -115,6 +115,7 @@ export default function ProductScrollSection({
               imageUrl={item.product.imageUrl}
               brandName={item.product.brand?.name ?? ""}
               productName={item.product.name}
+              unit={item.product.unit ?? undefined}
               price={item.price?.toString() ?? ""}
               oldPrice={item.oldPrice?.toString() ?? ""}
               discountPct={item.discountPct ?? undefined}
