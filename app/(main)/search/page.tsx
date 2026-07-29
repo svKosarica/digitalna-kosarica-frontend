@@ -45,10 +45,13 @@ export default async function SearchPage({ searchParams }: Props) {
     : ALL_STORE_IDS;
 
   // Parsed as an array even though the UI is single-select, so the wire format
-  // is multi-select-ready. filter(Boolean) drops the NaN from ?categories=abc
-  // and the 0 from a hand-edited URL.
+  // is multi-select-ready. The positive-integer check rejects the NaN from
+  // ?categories=abc, the 0 from a hand-edited URL, and non-integers/Infinity
+  // (e.g. ?categories=2.5 or ?categories=1e400) — Infinity matters because
+  // JSON.stringify turns it into a null array element, which can reach the
+  // backend's categoryIds as a null inside a List<Long>.
   const categoryIds = typeof params.categories === "string"
-    ? params.categories.split(",").map(Number).filter(Boolean)
+    ? params.categories.split(",").map(Number).filter((n) => Number.isInteger(n) && n > 0)
     : [];
 
   const isAvailable = params.available !== "false";

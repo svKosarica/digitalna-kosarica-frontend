@@ -42,12 +42,19 @@ export function normalizeStoreName(apiName: string): StoreName | undefined {
  * never sort or hardcode it. A child whose parentCategoryId matches no
  * top-level category is dropped rather than rendered as an orphan. The tree is
  * exactly two levels deep; the backend asserts this.
+ *
+ * A top-level category arrives with parentCategoryId === null. Both checks
+ * below use loose equality so an omitted field (parentCategoryId undefined —
+ * e.g. if the backend ever stops serializing explicit nulls) still counts as
+ * a root; with strict equality every root would be bucketed as a child of
+ * `undefined` instead, and the dropdown would silently render only "Vse
+ * kategorije".
  */
 export function buildCategoryTree(categories: Category[]): CategoryTreeNode[] {
   const childrenByParentId = new Map<number, Category[]>();
 
   for (const category of categories) {
-    if (category.parentCategoryId === null) continue;
+    if (category.parentCategoryId == null) continue;
     const siblings = childrenByParentId.get(category.parentCategoryId);
     if (siblings) {
       siblings.push(category);
@@ -57,7 +64,7 @@ export function buildCategoryTree(categories: Category[]): CategoryTreeNode[] {
   }
 
   return categories
-    .filter((category) => category.parentCategoryId === null)
+    .filter((category) => category.parentCategoryId == null)
     .map((parent) => ({
       parent,
       children: childrenByParentId.get(parent.id) ?? [],

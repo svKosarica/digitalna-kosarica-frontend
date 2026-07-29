@@ -55,6 +55,10 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
 
   const categoryTree = buildCategoryTree(categories);
 
+  // Assumes a single known id — a comma list (?categories=2,6) still filters
+  // results but falls back to the placeholder here, and same during a
+  // categories-API outage ([]). Both are deliberate v1 tradeoffs; revisit this
+  // derivation when multi-select lands.
   const categoryParam = searchParams.get("categories");
   const isKnownCategory =
     categoryParam !== null &&
