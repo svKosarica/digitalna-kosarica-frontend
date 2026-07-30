@@ -47,6 +47,24 @@ const price2 = new Intl.NumberFormat("sl-SI", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
+// Four decimals is the wire precision — NUMERIC(10,4) — so this never invents
+// digits the API did not send.
+const price4 = new Intl.NumberFormat("sl-SI", {
+  minimumFractionDigits: 4,
+  maximumFractionDigits: 4,
+});
+
+/**
+ * Two decimals, widening to four when two would collapse a real price to
+ * "0,00". Sheet-counted paper reaches that: the backend counts a 20-roll pack
+ * as 3000 pieces, so €/piece is 0.0013. Rendering that as "0,00 €/kos" reads as
+ * free, and in a price-per-unit sort it would leave a run of identical-looking
+ * rows in an order the reader cannot check.
+ */
+function formatEurAmount(value: number): string {
+  const collapsesToZero = value !== 0 && Math.abs(value) < 0.005;
+  return collapsesToZero ? price4.format(value) : price2.format(value);
+}
 
 /** "1,98 L", "500 g", "5 kosov", "15 cm" — or null when the listing has no parsed size. */
 export function formatSize(
@@ -87,7 +105,7 @@ export function formatSize(
   }
 }
 
-/** "3,53 €/L" — or null when the listing has no parsed size. */
+/** "3,53 €/L", "0,0013 €/kos" — or null when the listing has no parsed size. */
 export function formatPricePerUnit(
   pricePerUnit: number | null,
   baseUnit: BaseUnit | null,
@@ -95,7 +113,7 @@ export function formatPricePerUnit(
   if (pricePerUnit == null || baseUnit == null) return null;
   const label = PER_UNIT_LABEL[baseUnit];
   if (!label) return null;
-  return `${price2.format(pricePerUnit)} ${label}`;
+  return `${formatEurAmount(pricePerUnit)} ${label}`;
 }
 
 /** "cena na liter: 3,53 €" — the spoken form of formatPricePerUnit's output. */
@@ -106,5 +124,5 @@ export function pricePerUnitAriaLabel(
   if (pricePerUnit == null || baseUnit == null) return null;
   const spoken = PER_UNIT_SPOKEN[baseUnit];
   if (!spoken) return null;
-  return `${spoken}: ${price2.format(pricePerUnit)} €`;
+  return `${spoken}: ${formatEurAmount(pricePerUnit)} €`;
 }
