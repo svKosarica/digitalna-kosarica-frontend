@@ -23,6 +23,11 @@ export interface CartItem {
   discountPct?: number;
   storeName: StoreName;
   quantity: number;
+  /**
+   * Pre-formatted size, e.g. "1,98 L". Absent on entries persisted before
+   * sizes shipped, and on listings with no parsed size — both render nothing.
+   */
+  size?: string;
 }
 
 interface CartContextValue {

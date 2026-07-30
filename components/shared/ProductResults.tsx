@@ -1,5 +1,6 @@
 import ProductCard from "@/components/shared/ProductCard";
 import ProductCardList from "@/components/shared/ProductCardList";
+import { formatPricePerUnit, formatSize, pricePerUnitAriaLabel } from "@/lib/format";
 import { normalizeStoreName } from "@/lib/utils";
 import type { DiscountItem } from "@/types/product.types";
 
@@ -25,7 +26,10 @@ function cardProps(item: DiscountItem) {
     imageUrl: item.product?.imageUrl ?? "",
     brandName: item.product?.brand?.name ?? "",
     productName: item.product?.title ?? item.product?.name ?? "",
-    unit: item.product?.unit ?? undefined,
+    size: formatSize(item.totalQuantity, item.baseUnit) ?? undefined,
+    pricePerUnit: formatPricePerUnit(item.pricePerUnit, item.baseUnit) ?? undefined,
+    pricePerUnitAria:
+      pricePerUnitAriaLabel(item.pricePerUnit, item.baseUnit) ?? undefined,
     price: item.price?.toFixed(2) ?? "0.00",
     oldPrice:
       item.oldPrice != null && item.oldPrice !== item.price

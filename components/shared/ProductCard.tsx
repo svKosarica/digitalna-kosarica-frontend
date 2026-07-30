@@ -19,7 +19,12 @@ interface ProductCardProps {
   imageAlt?: string;
   brandName: string;
   productName: string;
-  unit?: string;
+  /** Pre-formatted, e.g. "1,98 L". Absent when the listing has no parsed size. */
+  size?: string;
+  /** Pre-formatted with its unit label, e.g. "1,16 €/L". Never render a bare number. */
+  pricePerUnit?: string;
+  /** Spoken form of pricePerUnit, e.g. "cena na liter: 1,16 €". */
+  pricePerUnitAria?: string;
   price: string;
   oldPrice?: string;
   discountPct?: number;
@@ -34,7 +39,9 @@ export default function ProductCard({
   imageAlt = "Product image",
   brandName,
   productName,
-  unit,
+  size,
+  pricePerUnit,
+  pricePerUnitAria,
   price,
   oldPrice,
   discountPct,
@@ -72,6 +79,7 @@ export default function ProductCard({
       oldPrice: oldPrice ? parseFloat(oldPrice) : undefined,
       discountPct,
       storeName: stores[0],
+      size,
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1200);
@@ -135,15 +143,15 @@ export default function ProductCard({
       </div>
 
       <div className="grow">
-        {/* Brand left, unit right — brand truncates so the unit stays pinned
+        {/* Brand left, size right — brand truncates so the size stays pinned
             to the edge on narrow cards instead of pushing out of the card. */}
         <div className="flex items-baseline justify-between gap-2 mb-1">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold truncate min-w-0">
             {brandName}
           </p>
-          {unit && (
+          {size && (
             <p className="text-[10px] text-muted-foreground font-semibold shrink-0">
-              {unit}
+              {size}
             </p>
           )}
         </div>
@@ -182,6 +190,14 @@ export default function ProductCard({
               <ArrowDown className="size-4 text-green-600" strokeWidth={3} aria-label="Cena padla" />
             )}
           </div>
+          {pricePerUnit && (
+            <p
+              className="text-[11px] text-muted-foreground font-semibold mt-0.5"
+              aria-label={pricePerUnitAria}
+            >
+              {pricePerUnit}
+            </p>
+          )}
         </div>
 
         <button

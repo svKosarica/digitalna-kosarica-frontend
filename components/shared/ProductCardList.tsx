@@ -13,7 +13,12 @@ interface ProductCardListProps {
   imageAlt?: string;
   brandName: string;
   productName: string;
-  unit?: string;
+  /** Pre-formatted, e.g. "1,98 L". Absent when the listing has no parsed size. */
+  size?: string;
+  /** Pre-formatted with its unit label, e.g. "1,16 €/L". Never render a bare number. */
+  pricePerUnit?: string;
+  /** Spoken form of pricePerUnit, e.g. "cena na liter: 1,16 €". */
+  pricePerUnitAria?: string;
   price: string;
   oldPrice?: string;
   discountPct?: number;
@@ -28,7 +33,9 @@ export default function ProductCardList({
   imageAlt = "Product image",
   brandName,
   productName,
-  unit,
+  size,
+  pricePerUnit,
+  pricePerUnitAria,
   price,
   oldPrice,
   discountPct,
@@ -66,6 +73,7 @@ export default function ProductCardList({
       oldPrice: oldPrice ? parseFloat(oldPrice) : undefined,
       discountPct,
       storeName: stores[0],
+      size,
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1200);
@@ -119,15 +127,15 @@ export default function ProductCardList({
 
       <div className="grow min-w-0 flex flex-col gap-2">
         <div className="min-w-0">
-          {/* Brand left, unit right — brand truncates so the unit stays pinned
+          {/* Brand left, size right — brand truncates so the size stays pinned
               to the edge on narrow rows instead of pushing out of the card. */}
           <div className="flex items-baseline justify-between gap-2 mb-0.5">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground truncate min-w-0">
               {brandName}
             </span>
-            {unit && (
+            {size && (
               <span className="text-[10px] font-semibold text-muted-foreground shrink-0">
-                {unit}
+                {size}
               </span>
             )}
           </div>
@@ -160,6 +168,14 @@ export default function ProductCardList({
               </span>
             )}
           </div>
+          {pricePerUnit && (
+            <span
+              className="text-[11px] font-semibold text-muted-foreground"
+              aria-label={pricePerUnitAria}
+            >
+              {pricePerUnit}
+            </span>
+          )}
           <button
             type="button"
             onClick={handleAddToCart}
@@ -180,23 +196,35 @@ export default function ProductCardList({
       </div>
 
       <div className="hidden sm:flex flex-col items-end gap-3 shrink-0 min-w-[180px]">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-2xl font-bold text-foreground">
-            {price} {currency}
-          </span>
-          {priceDir === "up" && (
-            <ArrowUp className="size-4 self-center text-red-500" strokeWidth={3} aria-label="Cena narasla" />
-          )}
-          {priceDir === "down" && (
-            <ArrowDown className="size-4 self-center text-green-600" strokeWidth={3} aria-label="Cena padla" />
-          )}
-          {oldPrice && (
+        {/* Price and its per-unit line are wrapped tightly: the column's gap-3
+            would otherwise push the per-unit line away from the price it qualifies. */}
+        <div className="flex flex-col items-end gap-0.5">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-2xl font-bold text-foreground">
+              {price} {currency}
+            </span>
+            {priceDir === "up" && (
+              <ArrowUp className="size-4 self-center text-red-500" strokeWidth={3} aria-label="Cena narasla" />
+            )}
+            {priceDir === "down" && (
+              <ArrowDown className="size-4 self-center text-green-600" strokeWidth={3} aria-label="Cena padla" />
+            )}
+            {oldPrice && (
+              <span
+                className={`text-sm font-semibold text-accent-foreground ${
+                  isIncrease ? "" : "line-through"
+                }`}
+              >
+                {oldPrice} {currency}
+              </span>
+            )}
+          </div>
+          {pricePerUnit && (
             <span
-              className={`text-sm font-semibold text-accent-foreground ${
-                isIncrease ? "" : "line-through"
-              }`}
+              className="text-[11px] font-semibold text-muted-foreground"
+              aria-label={pricePerUnitAria}
             >
-              {oldPrice} {currency}
+              {pricePerUnit}
             </span>
           )}
         </div>
