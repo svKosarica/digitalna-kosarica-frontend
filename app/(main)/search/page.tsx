@@ -4,12 +4,42 @@ import ProductCard from "@/components/shared/ProductCard";
 import ProductCardList from "@/components/shared/ProductCardList";
 import { Pagination } from "@/components/shared/Pagination";
 import { SearchFilters } from "@/components/shared/SearchFilters";
+import { formatPricePerUnit, formatSize, pricePerUnitAriaLabel } from "@/lib/format";
 import { normalizeStoreName, productCountLabel } from "@/lib/utils";
+import type { DiscountItem } from "@/types/product.types";
 import type { FilterOption, SortOption } from "@/types/search.types";
 import { STORE_MAP } from "@/types/search.types";
 import { SearchX } from "lucide-react";
 
 const PAGE_SIZE = 50;
+
+/**
+ * Shared card props for both layouts. Unlike ProductResults this hides a
+ * negative discountPct rather than flipping the badge — search results are not
+ * a most-popular list and never show a price increase as a badge.
+ */
+function cardProps(item: DiscountItem) {
+  const storeName = item.store?.name ? normalizeStoreName(item.store.name) : undefined;
+
+  return {
+    id: item.id,
+    imageUrl: item.product?.imageUrl ?? "",
+    brandName: item.product?.brand?.name ?? "",
+    productName: item.product?.title ?? item.product?.name ?? "",
+    size: formatSize(item.totalQuantity, item.baseUnit) ?? undefined,
+    pricePerUnit: formatPricePerUnit(item.pricePerUnit, item.baseUnit) ?? undefined,
+    pricePerUnitAria:
+      pricePerUnitAriaLabel(item.pricePerUnit, item.baseUnit) ?? undefined,
+    price: item.price?.toFixed(2) ?? "0.00",
+    oldPrice:
+      item.oldPrice != null && item.oldPrice !== item.price
+        ? item.oldPrice.toFixed(2)
+        : undefined,
+    discountPct:
+      item.discountPct != null && item.discountPct > 0 ? item.discountPct : undefined,
+    stores: storeName ? [storeName] : [],
+  };
+}
 
 interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -108,59 +138,13 @@ export default async function SearchPage({ searchParams }: Props) {
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 justify-items-center">
           {results.map((item) => (
-            <ProductCard
-              key={item.id}
-              id={item.id}
-              imageUrl={item.product?.imageUrl ?? ""}
-              brandName={item.product?.brand?.name ?? ""}
-              productName={item.product?.title ?? item.product?.name ?? ""}
-              unit={item.product?.unit ?? undefined}
-              price={item.price?.toFixed(2) ?? "0.00"}
-              oldPrice={
-                item.oldPrice != null && item.oldPrice !== item.price
-                  ? item.oldPrice.toFixed(2)
-                  : undefined
-              }
-              discountPct={
-                item.discountPct != null && item.discountPct > 0
-                  ? item.discountPct
-                  : undefined
-              }
-              stores={
-                item.store?.name && normalizeStoreName(item.store.name)
-                  ? [normalizeStoreName(item.store.name)!]
-                  : []
-              }
-            />
+            <ProductCard key={item.id} {...cardProps(item)} />
           ))}
         </div>
       ) : (
         <div className="space-y-4">
           {results.map((item) => (
-            <ProductCardList
-              key={item.id}
-              id={item.id}
-              imageUrl={item.product?.imageUrl ?? ""}
-              brandName={item.product?.brand?.name ?? ""}
-              productName={item.product?.title ?? item.product?.name ?? ""}
-              unit={item.product?.unit ?? undefined}
-              price={item.price?.toFixed(2) ?? "0.00"}
-              oldPrice={
-                item.oldPrice != null && item.oldPrice !== item.price
-                  ? item.oldPrice.toFixed(2)
-                  : undefined
-              }
-              discountPct={
-                item.discountPct != null && item.discountPct > 0
-                  ? item.discountPct
-                  : undefined
-              }
-              stores={
-                item.store?.name && normalizeStoreName(item.store.name)
-                  ? [normalizeStoreName(item.store.name)!]
-                  : []
-              }
-            />
+            <ProductCardList key={item.id} {...cardProps(item)} />
           ))}
         </div>
       )}

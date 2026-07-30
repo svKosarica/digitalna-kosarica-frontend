@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "@/components/shared/ProductCard";
+import { formatPricePerUnit, formatSize, pricePerUnitAriaLabel } from "@/lib/format";
 import { normalizeStoreName } from "@/lib/utils";
 import type { DiscountItem } from "@/types/product.types";
 
@@ -115,7 +116,13 @@ export default function ProductScrollSection({
               imageUrl={item.product.imageUrl}
               brandName={item.product.brand?.name ?? ""}
               productName={item.product.name}
-              unit={item.product.unit ?? undefined}
+              size={formatSize(item.totalQuantity, item.baseUnit) ?? undefined}
+              pricePerUnit={
+                formatPricePerUnit(item.pricePerUnit, item.baseUnit) ?? undefined
+              }
+              pricePerUnitAria={
+                pricePerUnitAriaLabel(item.pricePerUnit, item.baseUnit) ?? undefined
+              }
               price={item.price?.toString() ?? ""}
               oldPrice={item.oldPrice?.toString() ?? ""}
               discountPct={item.discountPct ?? undefined}

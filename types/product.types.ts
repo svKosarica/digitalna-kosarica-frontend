@@ -15,7 +15,6 @@ export interface Product {
   brand: Brand;
   name: string;
   title: string;
-  unit: string;
   imageUrl: string;
   /**
    * Ascending. May contain a parent AND its subcategory (e.g. [3, 20]), so this
