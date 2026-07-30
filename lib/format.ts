@@ -74,8 +74,18 @@ export function formatSize(
   if (totalQuantity == null || baseUnit == null) return null;
 
   switch (baseUnit) {
-    case "piece":
-      return `${decimal0.format(totalQuantity)} ${PIECE_FORMS[pieceRules.select(totalQuantity)]}`;
+    // The grammatical form has to agree with the number actually printed, so
+    // round first and select on the result. CLDR Slovenian sends any value with
+    // visible fraction digits to `few`, so selecting on a raw 1.5 while
+    // printing "2" would read "2 kosi" instead of "2 kosa".
+    case "piece": {
+      const count = Math.round(totalQuantity);
+      // Production carries sub-unit piece counts — a 200 ml sun lotion parsed as
+      // 0.2 pieces. "0 kosov" is the "0 as if data were missing" the display
+      // contract rejects, so such a listing has no usable size.
+      if (count === 0) return null;
+      return `${decimal0.format(count)} ${PIECE_FORMS[pieceRules.select(count)]}`;
+    }
 
     // Promote to the larger unit once the number gets big, the way a shelf label would.
     case "g":
