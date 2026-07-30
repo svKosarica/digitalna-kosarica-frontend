@@ -1,0 +1,110 @@
+import type { BaseUnit } from "@/types/product.types";
+
+/**
+ * Slovenian rendering of a listing's size and its price per unit.
+ *
+ * Both values come off the listing, never off the product. Both are null
+ * together when the store's label could not be parsed, and null here means
+ * "render nothing" — no dash, no "0".
+ *
+ * The only import is type-only, so type stripping erases it and this module can
+ * be exercised directly with `node`.
+ */
+
+// Slovenian has a dual, so a count has four forms. Intl implements the rule;
+// hand-rolling it off the last two digits is how it goes wrong.
+const PIECE_FORMS = {
+  one: "kos",
+  two: "kosa",
+  few: "kosi",
+  other: "kosov",
+  zero: "kosov",
+  many: "kosov",
+} as const;
+
+const PER_UNIT_LABEL: Record<BaseUnit, string> = {
+  g: "€/kg",
+  ml: "€/L",
+  piece: "€/kos",
+  m: "€/m",
+};
+
+// "1,16 €/L" does not read aloud usefully.
+const PER_UNIT_SPOKEN: Record<BaseUnit, string> = {
+  g: "cena na kilogram",
+  ml: "cena na liter",
+  piece: "cena na kos",
+  m: "cena na meter",
+};
+
+// Constructed once: these run per card in an auto-fill grid.
+const pieceRules = new Intl.PluralRules("sl");
+const decimal0 = new Intl.NumberFormat("sl-SI", { maximumFractionDigits: 0 });
+const decimal1 = new Intl.NumberFormat("sl-SI", { maximumFractionDigits: 1 });
+const decimal2 = new Intl.NumberFormat("sl-SI", { maximumFractionDigits: 2 });
+// A price reads as "3,50 €/L", not "3,5 €/L".
+const price2 = new Intl.NumberFormat("sl-SI", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+/** "1,98 L", "500 g", "5 kosov", "15 cm" — or null when the listing has no parsed size. */
+export function formatSize(
+  totalQuantity: number | null,
+  baseUnit: BaseUnit | null,
+): string | null {
+  if (totalQuantity == null || baseUnit == null) return null;
+
+  switch (baseUnit) {
+    case "piece":
+      return `${decimal0.format(totalQuantity)} ${PIECE_FORMS[pieceRules.select(totalQuantity)]}`;
+
+    // Promote to the larger unit once the number gets big, the way a shelf label would.
+    case "g":
+      return totalQuantity >= 1000
+        ? `${decimal2.format(totalQuantity / 1000)} kg`
+        : `${decimal0.format(totalQuantity)} g`;
+
+    case "ml":
+      return totalQuantity >= 1000
+        ? `${decimal2.format(totalQuantity / 1000)} L`
+        : `${decimal0.format(totalQuantity)} ml`;
+
+    // Lengths arrive folded to metres, so a 15 cm label is 0.15 and 5 mm is
+    // 0.005. Demote rather than render "0,01 m". A cm label divided by 100 at
+    // three decimals can carry one decimal (15,5 cm -> 0.155); an mm label
+    // divided by 1000 at three decimals is always a whole number of mm.
+    case "m":
+      if (totalQuantity >= 1) return `${decimal2.format(totalQuantity)} m`;
+      if (totalQuantity >= 0.01) return `${decimal1.format(totalQuantity * 100)} cm`;
+      return `${decimal0.format(totalQuantity * 1000)} mm`;
+
+    // A unit the backend added and this build does not know. baseUnit arrives as
+    // a bare string, so this is reachable: showing no size is honest, while
+    // falling through to metres would mislabel every such listing.
+    default:
+      return null;
+  }
+}
+
+/** "3,53 €/L" — or null when the listing has no parsed size. */
+export function formatPricePerUnit(
+  pricePerUnit: number | null,
+  baseUnit: BaseUnit | null,
+): string | null {
+  if (pricePerUnit == null || baseUnit == null) return null;
+  const label = PER_UNIT_LABEL[baseUnit];
+  if (!label) return null;
+  return `${price2.format(pricePerUnit)} ${label}`;
+}
+
+/** "cena na liter: 3,53 €" — the spoken form of formatPricePerUnit's output. */
+export function pricePerUnitAriaLabel(
+  pricePerUnit: number | null,
+  baseUnit: BaseUnit | null,
+): string | null {
+  if (pricePerUnit == null || baseUnit == null) return null;
+  const spoken = PER_UNIT_SPOKEN[baseUnit];
+  if (!spoken) return null;
+  return `${spoken}: ${price2.format(pricePerUnit)} €`;
+}
