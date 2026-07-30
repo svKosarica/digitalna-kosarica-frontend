@@ -100,6 +100,8 @@ Behaviour, one rule applied everywhere:
 | `2`, `piece` | `2 kosa` |
 | `3`, `piece` | `3 kosi` |
 | `5`, `piece` | `5 kosov` |
+| `1.5`, `piece` | `2 kosa` |
+| `0.2`, `piece` | `null` |
 | `null`, `null` | `null` |
 
 Four deviations from the handoff's reference implementation, each deliberate:
@@ -126,6 +128,29 @@ run once per card in an auto-fill grid.
 `maximumFractionDigits`, so `3.5` renders `3,5 €/L`. A price reads as
 `3,50 €/L`. Sizes keep maximum-only, so `1500 g` stays `1,5 kg` rather than
 `1,50 kg`.
+
+### Two further deviations, both found by browser verification
+
+Added after implementation, against live production data. Recorded here so the
+spec matches shipped behaviour.
+
+**Sub-cent price-per-unit widens to four digits.** Two decimals collapsed real
+prices to `0,00 €/kos` on 7 of 50 rows of a paper search: the backend counts
+sheets, so a 20-roll pack is 3000 pieces and €/piece is 0.0013. That reads as
+free, and inside the price-per-unit sort it left a run of identical-looking rows
+in an order the reader could not check. When two decimals would round a non-zero
+price to zero, four are used instead — exactly the wire precision
+(`NUMERIC(10,4)`), so no digit is invented. An exact zero still renders `0,00`.
+
+**Piece counts round before the plural is selected.** CLDR Slovenian sends any
+value with visible fraction digits to `few`, so selecting the form on the raw
+quantity while printing a rounded number disagrees: a 0.2 printed as `0`
+rendered `0 kosi`, and a 1.5 printed as `2` would have read `2 kosi` instead of
+`2 kosa`. The count is rounded first and the form selected on the result.
+
+A count that rounds to zero renders no size at all. Production carries sub-unit
+piece counts — a 200 ml sun lotion parsed as 0.2 pieces — and `0 kosov` is
+exactly the "`0` as if data were missing" this contract rejects.
 
 Slovenian pluralisation comes from `Intl.PluralRules("sl")`, which implements
 the dual, not from a hand-rolled rule:
@@ -291,3 +316,20 @@ Not blocking, and no backend change is requested:
   `StoreProductModel` and `StoreProductDetailModel`.
 - We demote sub-metre lengths to `cm`/`mm` rather than rendering `0,01 m`. Their
   display table does not cover values below 1 m.
+
+Two data-quality findings from verifying against production, which are theirs to
+decide on rather than ours to work around:
+
+- **Sub-unit piece counts exist.** `store_product` 42219-adjacent row "mleko za
+  sončenje zf50, sun kiss, 200ml" carries `totalQuantity` 0.2 with
+  `baseUnit = 'piece'` — a 200 ml lotion read as a fifth of a piece. We now
+  render no size for it. Its `pricePerUnit` of 34.95 €/kos is computed off that
+  0.2 and is not a real per-piece price, but it still sorts and displays; we did
+  not suppress it, because the value is what the backend computed and ranks on.
+  A piece count below 1 is arguably never valid and could be rejected at parse
+  time the way unparseable labels already are.
+- **Sheet counts make €/piece very small.** Toilet paper parsed as `listov`
+  yields 1500–4400 pieces per pack and prices around 0.0013 €/kos. Legitimate
+  and comparable, but worth knowing that per-piece prices span four orders of
+  magnitude, which is why the frontend now widens precision rather than showing
+  `0,00`.
