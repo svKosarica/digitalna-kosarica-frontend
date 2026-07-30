@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { ImageIcon, ExternalLink } from "lucide-react";
 import { getProduct, getSimilarProducts } from "@/actions/product.actions";
+import { formatPricePerUnit, formatSize, pricePerUnitAriaLabel } from "@/lib/format";
 import { normalizeStoreName } from "@/lib/utils";
 import { STORE_LOGOS } from "@/lib/store";
 import { PriceHistoryChart } from "@/components/shared/PriceHistoryChart";
@@ -37,9 +38,15 @@ export default async function ProductDetailPage({ params }: Props) {
     cardDiscount,
     url,
     priceHistory,
+    baseUnit,
+    totalQuantity,
+    pricePerUnit,
   } = data;
 
   const storeName = store?.name ? normalizeStoreName(store.name) : null;
+  const size = formatSize(totalQuantity, baseUnit);
+  const perUnit = formatPricePerUnit(pricePerUnit, baseUnit);
+  const perUnitAria = pricePerUnitAriaLabel(pricePerUnit, baseUnit);
 
   return (
     <div className="px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-10">
@@ -91,6 +98,12 @@ export default async function ProductDetailPage({ params }: Props) {
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-foreground leading-tight break-words">
               {product.title || product.name}
             </h1>
+            {size && (
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">
+                Pakiranje:{" "}
+                <span className="font-semibold text-foreground">{size}</span>
+              </p>
+            )}
           </div>
 
           <div className="flex items-baseline gap-2 sm:gap-3">
@@ -103,6 +116,16 @@ export default async function ProductDetailPage({ params }: Props) {
               </span>
             )}
           </div>
+
+          {perUnit && (
+            <p
+              className="text-xs sm:text-sm text-muted-foreground"
+              aria-label={perUnitAria ?? undefined}
+            >
+              Cena na enoto:{" "}
+              <span className="font-semibold text-foreground">{perUnit}</span>
+            </p>
+          )}
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <span
