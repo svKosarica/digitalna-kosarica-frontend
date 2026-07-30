@@ -73,6 +73,7 @@ export default function ProductCardList({
       oldPrice: oldPrice ? parseFloat(oldPrice) : undefined,
       discountPct,
       storeName: stores[0],
+      size,
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1200);

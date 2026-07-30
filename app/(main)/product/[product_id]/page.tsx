@@ -159,6 +159,7 @@ export default async function ProductDetailPage({ params }: Props) {
                   discountPct:
                     discountPct != null && discountPct > 0 ? discountPct : undefined,
                   storeName,
+                  size: size ?? undefined,
                 }}
               />
             )}

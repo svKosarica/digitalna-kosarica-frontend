@@ -69,6 +69,11 @@ export function BasketItemCard({
                 {item.productName}
               </h4>
             </Link>
+            {item.size && (
+              <span className="block text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+                {item.size}
+              </span>
+            )}
           </div>
 
           {/* Price + Quantity */}
@@ -80,7 +85,9 @@ export function BasketItemCard({
               </span>
               {item.quantity > 1 && (
                 <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
-                  {item.price.toFixed(2)} &euro; / kos
+                  {/* "/ izdelek", not "/ kos": this is the per-cart-item price,
+                      not the API's price-per-piece now shown beside it. */}
+                  {item.price.toFixed(2)} &euro; / izdelek
                 </span>
               )}
             </div>
