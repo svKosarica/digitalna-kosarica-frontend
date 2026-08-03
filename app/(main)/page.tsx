@@ -16,7 +16,7 @@ export default async function Page() {
 
   return (
     <>
-      <section className="relative mx-4 sm:mx-6 mt-6 overflow-hidden rounded-xl bg-secondary p-8 md:p-16 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12">
+      <section className="relative mx-4 sm:mx-6 lg:mx-20 mt-6 overflow-hidden rounded-xl bg-secondary p-8 md:p-16 lg:p-20 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12">
         <div className="relative z-10 max-w-xl">
           <h1 className="text-3xl sm:text-4xl md:text-[60px] font-bold text-foreground mb-4 md:mb-6 tracking-tight leading-tight">
             Prihrani pri vsakem nakupu
@@ -27,13 +27,13 @@ export default async function Page() {
           </p>
           <HeroFocusButton />
         </div>
-        <div className="relative w-full max-w-md aspect-video rounded-2xl overflow-hidden shadow-2xl hidden md:block">
+        <div className="relative w-full max-w-lg lg:max-w-xl h-[300px] md:h-[360px] lg:h-[420px] rounded-2xl overflow-hidden shadow-2xl hidden md:block">
           <Image
             src="/images/hero-image.jpg"
             alt="Izbor živil iz trgovin"
             fill
             className="object-cover"
-            sizes="448px"
+            sizes="(max-width: 1024px) 512px, 576px"
             priority
           />
         </div>

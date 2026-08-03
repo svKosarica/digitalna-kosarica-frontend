@@ -23,6 +23,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "dm.emea.cms.aldi.cx",
       },
+      {
+        protocol: "https",
+        hostname: "hitrinakup.com",
+      },
     ],
   },
 };
