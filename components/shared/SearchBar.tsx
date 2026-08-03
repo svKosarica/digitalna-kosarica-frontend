@@ -54,7 +54,7 @@ export function SearchBar() {
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={handleKeyDown}
         onAnimationEnd={(e) => e.currentTarget.classList.remove("animate-search-pop")}
-        className="pl-9 bg-white border-border rounded-full shadow-none text-base placeholder:text-muted-foreground/50 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
+        className="pl-9 bg-white dark:bg-white border-2 border-primary/30 rounded-full shadow-sm text-base placeholder:text-muted-foreground/50 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
       />
     </div>
   );
