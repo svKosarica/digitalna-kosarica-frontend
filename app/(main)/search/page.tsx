@@ -110,7 +110,7 @@ export default async function SearchPage({ searchParams }: Props) {
   const storeCount = new Set(results.map((item) => item.store?.name).filter(Boolean)).size;
 
   return (
-    <div className="px-4 sm:px-6 py-6 space-y-6">
+    <div className="px-4 sm:px-6 lg:px-20 py-6 space-y-6">
       <header className="mb-2">
         {/* No query is not an error state: the API accepts an empty query and
             returns the whole catalogue, which is what the home page's

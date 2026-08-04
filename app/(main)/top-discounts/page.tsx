@@ -58,7 +58,7 @@ export default async function TopDiscountsPage({ searchParams }: Props) {
   const empty = EMPTY_STATES[activeWindow];
 
   return (
-    <div className="px-4 sm:px-6 py-6 space-y-6">
+    <div className="px-4 sm:px-6 lg:px-20 py-6 space-y-6">
       <header className="mb-2">
         <h1 className="text-3xl font-extrabold tracking-tight text-foreground mb-1 break-words">
           Najvišji popusti
