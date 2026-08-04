@@ -18,9 +18,20 @@ export function SearchBar() {
   }, [pathname]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter" && query.trim()) {
-      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
-    }
+    if (e.key !== "Enter" || !query.trim()) return;
+
+    // Only inherit params when they are already search params. From /popular or
+    // /top-discounts, useSearchParams() holds that page's state, and copying it
+    // would leak ?onlyDiscounted=true or ?window=WEEKLY into a search URL.
+    const params =
+      pathname === "/search"
+        ? new URLSearchParams(searchParams.toString())
+        : new URLSearchParams();
+
+    params.set("q", query.trim());
+    // A new term invalidates the offset; everything else is a standing choice.
+    params.delete("page");
+    router.push(`/search?${params.toString()}`);
   }
 
   return (

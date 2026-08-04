@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { LayoutGrid, List } from "lucide-react";
 import {
   Select,
@@ -24,6 +24,13 @@ const ALL_STORE_IDS = Object.keys(STORE_MAP).map(Number);
 const ITEM_CLASS =
   "font-semibold text-foreground focus:bg-secondary focus:text-foreground";
 
+// border-transparent in the base keeps the button from shifting 1px when the
+// active state adds its border.
+const TOGGLE_BASE =
+  "p-2 rounded-lg border border-transparent transition-colors cursor-pointer";
+const TOGGLE_ON = "bg-card text-primary border-primary/30";
+const TOGGLE_OFF = "text-muted-foreground/40 hover:text-primary";
+
 interface SearchFiltersProps {
   /** Flat list from GET /categories. Empty when the endpoint fails or returns 204. */
   categories: Category[];
@@ -38,17 +45,11 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
   const stores = searchParams.get("stores");
   const available = searchParams.get("available") ?? "true";
   const cardDiscount = searchParams.get("cardDiscount") ?? "false";
-  const viewParam = searchParams.get("view");
-  const view = viewParam ?? "list";
-
-  useEffect(() => {
-    if (viewParam) return;
-    const isDesktop = window.matchMedia("(min-width: 640px)").matches;
-    const defaultView = isDesktop ? "grid" : "list";
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("view", defaultView);
-    router.replace(`/search?${params.toString()}`);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Null means "not chosen": the toggle's highlight then follows CSS at the
+  // same breakpoint the results do, so neither can flash against the other.
+  const viewParamRaw = searchParams.get("view");
+  const view =
+    viewParamRaw === "grid" || viewParamRaw === "list" ? viewParamRaw : null;
 
   const selectedStores: number[] = stores
     ? stores.split(",").map(Number)
@@ -263,11 +264,18 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
             <button
               type="button"
               onClick={() => updateParam("view", "grid")}
+              aria-label="Mrežni prikaz"
+              aria-pressed={view === "grid"}
               className={cn(
-                "p-2 rounded-lg transition-colors cursor-pointer",
-                view === "grid"
-                  ? "bg-card text-primary border border-primary/30"
-                  : "text-muted-foreground/40 hover:text-primary",
+                TOGGLE_BASE,
+                view === "grid" && TOGGLE_ON,
+                view === "list" && TOGGLE_OFF,
+                // Unchosen: inactive on phones, active from sm up — the
+                // breakpoint the results themselves switch at.
+                view === null && [
+                  TOGGLE_OFF,
+                  "sm:bg-card sm:text-primary sm:border-primary/30",
+                ],
               )}
             >
               <LayoutGrid className="size-4 sm:size-5" />
@@ -275,11 +283,16 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
             <button
               type="button"
               onClick={() => updateParam("view", "list")}
+              aria-label="Seznamski prikaz"
+              aria-pressed={view === "list"}
               className={cn(
-                "p-2 rounded-lg transition-colors cursor-pointer",
-                view === "list"
-                  ? "bg-card text-primary border border-primary/30"
-                  : "text-muted-foreground/40 hover:text-primary",
+                TOGGLE_BASE,
+                view === "list" && TOGGLE_ON,
+                view === "grid" && TOGGLE_OFF,
+                view === null && [
+                  TOGGLE_ON,
+                  "sm:bg-transparent sm:text-muted-foreground/40 sm:border-transparent sm:hover:text-primary",
+                ],
               )}
             >
               <List className="size-4 sm:size-5" />

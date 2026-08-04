@@ -5,7 +5,7 @@ import ProductCardList from "@/components/shared/ProductCardList";
 import { Pagination } from "@/components/shared/Pagination";
 import { SearchFilters } from "@/components/shared/SearchFilters";
 import { formatPricePerUnit, formatSize, pricePerUnitAriaLabel } from "@/lib/format";
-import { normalizeStoreName, productCountLabel } from "@/lib/utils";
+import { cn, normalizeStoreName, productCountLabel } from "@/lib/utils";
 import type { DiscountItem } from "@/types/product.types";
 import type { FilterOption, SortOption } from "@/types/search.types";
 import { STORE_MAP } from "@/types/search.types";
@@ -97,7 +97,13 @@ export default async function SearchPage({ searchParams }: Props) {
   ]);
 
   const results = response.products;
-  const viewMode = params.view === "grid" ? "grid" : "list";
+  // Three states, and null is the interesting one: it means "the visitor has
+  // not chosen", which the server cannot resolve because it does not know the
+  // viewport. Rather than guess and correct on the client — which is what the
+  // deleted mount effect did, and why results flashed as rows — both layouts
+  // render and CSS picks, exactly as ProductResults does on /popular.
+  const viewParam =
+    params.view === "grid" || params.view === "list" ? params.view : null;
   const storeCount = new Set(results.map((item) => item.store?.name).filter(Boolean)).size;
 
   return (
@@ -129,18 +135,29 @@ export default async function SearchPage({ searchParams }: Props) {
             {query ? <>Ni rezultatov za &ldquo;{query}&rdquo;.</> : "Ni rezultatov."}
           </p>
         </div>
-      ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 justify-items-center">
-          {results.map((item) => (
-            <ProductCard key={item.id} {...cardProps(item)} />
-          ))}
-        </div>
       ) : (
-        <div className="space-y-4">
-          {results.map((item) => (
-            <ProductCardList key={item.id} {...cardProps(item)} />
-          ))}
-        </div>
+        <>
+          {viewParam !== "list" && (
+            <div
+              className={cn(
+                "grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 justify-items-center",
+                viewParam === null && "hidden sm:grid",
+              )}
+            >
+              {results.map((item) => (
+                <ProductCard key={item.id} {...cardProps(item)} />
+              ))}
+            </div>
+          )}
+
+          {viewParam !== "grid" && (
+            <div className={cn("space-y-4", viewParam === null && "sm:hidden")}>
+              {results.map((item) => (
+                <ProductCardList key={item.id} {...cardProps(item)} />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <Pagination currentPage={response.currentPage} totalPages={response.numberOfPages} />
