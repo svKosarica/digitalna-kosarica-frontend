@@ -7,12 +7,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Matched as substrings against a lowercased API name, first match winning.
+// The API sends "tus" without the diacritic; the accented alias is defensive.
 const STORE_ALIASES: Record<string, StoreName> = {
   spar: "spar",
   mercator: "mercator",
   merkator: "mercator",
   hofer: "hofer",
   lidl: "lidl",
+  tus: "tus",
+  "tuš": "tus",
 };
 
 /**

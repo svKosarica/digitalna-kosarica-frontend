@@ -1,3 +1,5 @@
+import type { StoreName } from "@/lib/store";
+
 export type FilterOption = "PRICE" | "PRICE_PER_UNIT" | "DISCOUNT_PCT" | "NONE";
 
 export type SortOption = "ASCENDING" | "DESCENDING" | "NONE";
@@ -15,11 +17,13 @@ export interface SearchRequest {
   categoryIds?: number[];
 }
 
-export const STORE_MAP: Record<number, string> = {
+/** Wire ids for the stores the API serves. `Object.keys` order defines filter order. */
+export const STORE_MAP: Record<number, StoreName> = {
   1: "spar",
   2: "lidl",
   3: "mercator",
   4: "hofer",
+  5: "tus",
 };
 
 /** Flat node as returned by GET /categories; the tree is expressed by parentCategoryId. */

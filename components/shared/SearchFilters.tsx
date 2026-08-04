@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ALL_CATEGORIES_LABEL, STORE_MAP } from "@/types/search.types";
 import type { Category } from "@/types/search.types";
+import { STORE_LOGOS } from "@/lib/store";
 import { buildCategoryTree, cn } from "@/lib/utils";
 
 const ALL_STORE_IDS = Object.keys(STORE_MAP).map(Number);
@@ -123,7 +124,7 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
             <SelectItem value="all" className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">Vse trgovine</SelectItem>
             {ALL_STORE_IDS.map((id) => (
               <SelectItem key={id} value={String(id)} className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">
-                <span className="capitalize">{STORE_MAP[id]}</span>
+                {STORE_LOGOS[STORE_MAP[id]].label}
               </SelectItem>
             ))}
           </SelectContent>
