@@ -49,15 +49,6 @@ export default async function SearchPage({ searchParams }: Props) {
   const params = await searchParams;
   const query = typeof params.q === "string" ? params.q.trim() : "";
 
-  if (!query) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-muted-foreground gap-3">
-        <SearchX size={48} strokeWidth={1.5} />
-        <p className="text-lg">Vnesi iskalni pojem v iskalno polje.</p>
-      </div>
-    );
-  }
-
   const VALID_FILTERS: FilterOption[] = ["PRICE", "PRICE_PER_UNIT", "DISCOUNT_PCT", "NONE"];
   const VALID_SORTS: SortOption[] = ["ASCENDING", "DESCENDING", "NONE"];
 
@@ -112,8 +103,11 @@ export default async function SearchPage({ searchParams }: Props) {
   return (
     <div className="px-4 sm:px-6 py-6 space-y-6">
       <header className="mb-2">
+        {/* No query is not an error state: the API accepts an empty query and
+            returns the whole catalogue, which is what the home page's
+            "Primerjaj cene" links into. */}
         <h1 className="text-3xl font-extrabold tracking-tight text-foreground mb-1 break-words">
-          Rezultati za &ldquo;{query}&rdquo;
+          {query ? <>Rezultati za &ldquo;{query}&rdquo;</> : "Vsi izdelki"}
         </h1>
         <p className="text-muted-foreground font-medium">
           {productCountLabel(response.allItems)} v {storeCount}{" "}
@@ -132,7 +126,7 @@ export default async function SearchPage({ searchParams }: Props) {
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
           <SearchX size={48} strokeWidth={1.5} />
           <p className="text-lg">
-            Ni rezultatov za &ldquo;{query}&rdquo;.
+            {query ? <>Ni rezultatov za &ldquo;{query}&rdquo;.</> : "Ni rezultatov."}
           </p>
         </div>
       ) : viewMode === "grid" ? (
