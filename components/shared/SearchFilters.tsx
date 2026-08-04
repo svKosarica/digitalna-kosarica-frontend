@@ -21,10 +21,8 @@ import {
   VALID_SORTS,
 } from "@/types/search.types";
 import type { Category, FilterOption, SortOption } from "@/types/search.types";
-import { STORE_LOGOS } from "@/lib/store";
+import { StoreMultiSelect } from "@/components/shared/StoreMultiSelect";
 import { buildCategoryTree, cn } from "@/lib/utils";
-
-const ALL_STORE_IDS = Object.keys(STORE_MAP).map(Number);
 
 const ITEM_CLASS =
   "font-semibold text-foreground focus:bg-secondary focus:text-foreground";
@@ -66,7 +64,13 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
     ? (orderParam as SortOption)
     : "NONE";
 
-  const stores = searchParams.get("stores");
+  const storesParam = searchParams.get("stores");
+  // Ids absent from STORE_MAP are dropped here, which also swallows the NaN
+  // from ?stores=abc, so the popover never has to render an id it cannot name.
+  const selectedStores = storesParam
+    ? storesParam.split(",").map(Number).filter((id) => id in STORE_MAP)
+    : [];
+
   const available = searchParams.get("available") ?? "true";
   const cardDiscount = searchParams.get("cardDiscount") ?? "false";
   // Null means "not chosen": the toggle's highlight then follows CSS at the
@@ -74,10 +78,6 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
   const viewParamRaw = searchParams.get("view");
   const view =
     viewParamRaw === "grid" || viewParamRaw === "list" ? viewParamRaw : null;
-
-  const selectedStores: number[] = stores
-    ? stores.split(",").map(Number)
-    : [];
 
   const categoryTree = buildCategoryTree(categories);
 
@@ -126,17 +126,6 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
     [updateParams],
   );
 
-  const allStoresSelected =
-    selectedStores.length === 0 || selectedStores.length === ALL_STORE_IDS.length;
-
-  function handleStoreChange(val: string) {
-    if (val === "all") {
-      updateParam("stores", null);
-    } else {
-      updateParam("stores", val);
-    }
-  }
-
   function handleCategoryChange(val: string) {
     updateParam("categories", val === "all" ? null : val);
   }
@@ -158,23 +147,12 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
   return (
     <div className="bg-secondary p-3 sm:p-4 rounded-xl border border-border/30">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-        {/* Store select */}
-        <Select
-          value={allStoresSelected ? "all" : selectedStores.join(",")}
-          onValueChange={handleStoreChange}
-        >
-          <SelectTrigger className="w-full sm:w-[160px] bg-card border-border text-foreground font-bold text-sm">
-            <SelectValue placeholder="Vse trgovine" />
-          </SelectTrigger>
-          <SelectContent position="popper" sideOffset={4} className="bg-card border-border">
-            <SelectItem value="all" className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">Vse trgovine</SelectItem>
-            {ALL_STORE_IDS.map((id) => (
-              <SelectItem key={id} value={String(id)} className="font-semibold text-foreground focus:bg-secondary focus:text-foreground">
-                {STORE_LOGOS[STORE_MAP[id]].label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <StoreMultiSelect
+          selected={selectedStores}
+          onCommit={(ids) =>
+            updateParam("stores", ids.length ? ids.join(",") : null)
+          }
+        />
 
         {/* Category select */}
         <Select value={selectedCategory} onValueChange={handleCategoryChange}>

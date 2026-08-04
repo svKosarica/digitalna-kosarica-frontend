@@ -58,9 +58,15 @@ export default async function SearchPage({ searchParams }: Props) {
     : "NONE";
 
   const ALL_STORE_IDS = Object.keys(STORE_MAP).map(Number);
-  const storeIds = typeof params.stores === "string"
-    ? params.stores.split(",").map(Number).filter(Boolean)
-    : ALL_STORE_IDS;
+  const requestedStoreIds =
+    typeof params.stores === "string"
+      ? params.stores.split(",").map(Number).filter((id) => id in STORE_MAP)
+      : [];
+  // Never forward [] — the API reads it as "every store", so an empty
+  // (?stores=) or all-garbage (?stores=99) param would silently mean the
+  // opposite of a filter. Membership also subsumes the old filter(Boolean),
+  // which only caught NaN and 0.
+  const storeIds = requestedStoreIds.length ? requestedStoreIds : ALL_STORE_IDS;
 
   // Parsed as an array even though the UI is single-select, so the wire format
   // is multi-select-ready. The positive-integer check rejects the NaN from
