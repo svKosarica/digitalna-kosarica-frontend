@@ -8,7 +8,7 @@ import { formatPricePerUnit, formatSize, pricePerUnitAriaLabel } from "@/lib/for
 import { cn, normalizeStoreName, productCountLabel } from "@/lib/utils";
 import type { DiscountItem } from "@/types/product.types";
 import type { FilterOption, SortOption } from "@/types/search.types";
-import { STORE_MAP } from "@/types/search.types";
+import { STORE_MAP, VALID_FILTERS, VALID_SORTS } from "@/types/search.types";
 import { SearchX } from "lucide-react";
 
 const PAGE_SIZE = 50;
@@ -49,16 +49,13 @@ export default async function SearchPage({ searchParams }: Props) {
   const params = await searchParams;
   const query = typeof params.q === "string" ? params.q.trim() : "";
 
-  const VALID_FILTERS: FilterOption[] = ["PRICE", "PRICE_PER_UNIT", "DISCOUNT_PCT", "NONE"];
-  const VALID_SORTS: SortOption[] = ["ASCENDING", "DESCENDING", "NONE"];
-
   const filter = VALID_FILTERS.includes(params.filter as FilterOption)
     ? (params.filter as FilterOption)
-    : "PRICE";
+    : "NONE";
 
   const order = VALID_SORTS.includes(params.order as SortOption)
     ? (params.order as SortOption)
-    : "DESCENDING";
+    : "NONE";
 
   const ALL_STORE_IDS = Object.keys(STORE_MAP).map(Number);
   const storeIds = typeof params.stores === "string"

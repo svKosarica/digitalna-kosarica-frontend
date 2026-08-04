@@ -4,6 +4,22 @@ export type FilterOption = "PRICE" | "PRICE_PER_UNIT" | "DISCOUNT_PCT" | "NONE";
 
 export type SortOption = "ASCENDING" | "DESCENDING" | "NONE";
 
+/**
+ * Every accepted value, for validating URL params. Shared so the page and the
+ * filter bar cannot disagree about what a valid sort is.
+ *
+ * Note that sortOption NONE is not neutral server-side — it orders descending —
+ * so the UI must never show a chosen filter with no direction.
+ */
+export const VALID_FILTERS: FilterOption[] = [
+  "PRICE",
+  "PRICE_PER_UNIT",
+  "DISCOUNT_PCT",
+  "NONE",
+];
+
+export const VALID_SORTS: SortOption[] = ["ASCENDING", "DESCENDING", "NONE"];
+
 export interface SearchRequest {
   page: number;
   size: number;

@@ -14,8 +14,13 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ALL_CATEGORIES_LABEL, STORE_MAP } from "@/types/search.types";
-import type { Category } from "@/types/search.types";
+import {
+  ALL_CATEGORIES_LABEL,
+  STORE_MAP,
+  VALID_FILTERS,
+  VALID_SORTS,
+} from "@/types/search.types";
+import type { Category, FilterOption, SortOption } from "@/types/search.types";
 import { STORE_LOGOS } from "@/lib/store";
 import { buildCategoryTree, cn } from "@/lib/utils";
 
@@ -31,6 +36,15 @@ const TOGGLE_BASE =
 const TOGGLE_ON = "bg-card text-primary border-primary/30";
 const TOGGLE_OFF = "text-muted-foreground/40 hover:text-primary";
 
+// sortOption NONE is not neutral server-side — filter=PRICE with sortOption=NONE
+// returns the most expensive rows first — so a field chosen while no direction
+// is set must be given one, or "Cena" would quietly mean "priciest first".
+const DEFAULT_ORDER: Record<Exclude<FilterOption, "NONE">, SortOption> = {
+  PRICE: "ASCENDING",
+  PRICE_PER_UNIT: "ASCENDING",
+  DISCOUNT_PCT: "DESCENDING",
+};
+
 interface SearchFiltersProps {
   /** Flat list from GET /categories. Empty when the endpoint fails or returns 204. */
   categories: Category[];
@@ -40,8 +54,18 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const filter = searchParams.get("filter") ?? "PRICE";
-  const order = searchParams.get("order") ?? "DESCENDING";
+  // Validated, not just defaulted: ?filter=xyz used to reach the Select as-is
+  // and render a blank trigger.
+  const filterParam = searchParams.get("filter");
+  const filter: FilterOption = VALID_FILTERS.includes(filterParam as FilterOption)
+    ? (filterParam as FilterOption)
+    : "NONE";
+
+  const orderParam = searchParams.get("order");
+  const order: SortOption = VALID_SORTS.includes(orderParam as SortOption)
+    ? (orderParam as SortOption)
+    : "NONE";
+
   const stores = searchParams.get("stores");
   const available = searchParams.get("available") ?? "true";
   const cardDiscount = searchParams.get("cardDiscount") ?? "false";
@@ -76,23 +100,30 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
   const selectedCategory =
     categoryParam === null ? "all" : isKnownCategory ? categoryParam : "";
 
-  const updateParam = useCallback(
-    (key: string, value: string | null) => {
+  const updateParams = useCallback(
+    (entries: Record<string, string | null>) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (value === null) {
-        params.delete(key);
-      } else {
-        params.set(key, value);
+      for (const [key, value] of Object.entries(entries)) {
+        if (value === null) {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
       }
       // Any filter change invalidates the current page offset — a user on page 4
       // who narrows the results would otherwise land on an empty page 4.
       // `view` is presentation-only, so it keeps your place.
-      if (key !== "page" && key !== "view") {
+      if (Object.keys(entries).some((key) => key !== "page" && key !== "view")) {
         params.delete("page");
       }
       router.replace(`/search?${params.toString()}`);
     },
     [router, searchParams],
+  );
+
+  const updateParam = useCallback(
+    (key: string, value: string | null) => updateParams({ [key]: value }),
+    [updateParams],
   );
 
   const allStoresSelected =
@@ -108,6 +139,20 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
 
   function handleCategoryChange(val: string) {
     updateParam("categories", val === "all" ? null : val);
+  }
+
+  function handleFilterChange(val: string) {
+    const next = val as FilterOption;
+    if (next === "NONE") {
+      // The API ignores sortOption without a field, and a stale value would
+      // leave a direction pill lit while both are disabled.
+      updateParams({ filter: "NONE", order: null });
+      return;
+    }
+    updateParams({
+      filter: next,
+      ...(order === "NONE" ? { order: DEFAULT_ORDER[next] } : {}),
+    });
   }
 
   return (
@@ -217,10 +262,7 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
           <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground/60 hidden sm:inline">
             Razvrsti
           </span>
-          <Select
-            value={filter}
-            onValueChange={(val) => updateParam("filter", val)}
-          >
+          <Select value={filter} onValueChange={handleFilterChange}>
             <SelectTrigger className="flex-1 sm:flex-none sm:w-[170px] bg-card border-border text-foreground font-bold text-sm">
               <SelectValue />
             </SelectTrigger>
@@ -233,11 +275,15 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
           </Select>
 
           <div className="flex items-center gap-0.5 bg-card p-1 rounded-lg border border-border">
+            {/* Inert while nothing is sorted: the API ignores sortOption without
+                a field, and a live-looking button that does nothing is worse
+                than a visibly disabled one. */}
             <button
               type="button"
+              disabled={filter === "NONE"}
               onClick={() => updateParam("order", "ASCENDING")}
               className={cn(
-                "px-3 py-1 text-xs font-bold rounded-md transition-colors cursor-pointer",
+                "px-3 py-1 text-xs font-bold rounded-md transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none",
                 order === "ASCENDING"
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-secondary",
@@ -247,9 +293,10 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
             </button>
             <button
               type="button"
+              disabled={filter === "NONE"}
               onClick={() => updateParam("order", "DESCENDING")}
               className={cn(
-                "px-3 py-1 text-xs font-bold rounded-md transition-colors cursor-pointer",
+                "px-3 py-1 text-xs font-bold rounded-md transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none",
                 order === "DESCENDING"
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-secondary",
