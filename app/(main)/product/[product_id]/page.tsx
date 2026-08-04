@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { ImageIcon, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
+import { ProductImage } from "@/components/shared/ProductImage";
 import { getProduct, getSimilarProducts } from "@/actions/product.actions";
 import { formatPricePerUnit, formatSize, pricePerUnitAriaLabel } from "@/lib/format";
 import { normalizeStoreName } from "@/lib/utils";
@@ -56,18 +57,14 @@ export default async function ProductDetailPage({ params }: Props) {
         <section className="flex flex-col md:flex-row gap-6 md:gap-12">
           {/* Product image */}
           <div className="relative w-full max-h-[240px] sm:max-h-none md:w-[420px] aspect-square shrink-0 bg-card rounded-2xl flex items-center justify-center border border-border/10 mx-auto md:mx-0">
-            {product.imageUrl ? (
-              <Image
-                src={product.imageUrl}
-                alt={product.title || product.name}
-                fill
-                className="object-contain p-6 sm:p-8"
-                sizes="(max-width: 768px) 240px, 420px"
-                priority
-              />
-            ) : (
-              <ImageIcon className="size-14 sm:size-20 text-border" />
-            )}
+            <ProductImage
+              src={product.imageUrl}
+              alt={product.title || product.name}
+              sizes="(max-width: 768px) 240px, 420px"
+              className="object-contain p-6 sm:p-8"
+              iconClassName="size-14 sm:size-20"
+              priority
+            />
 
             {discountPct != null && discountPct > 0 && (
               <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full bg-primary text-primary-foreground text-xs sm:text-sm font-bold tracking-tight">
