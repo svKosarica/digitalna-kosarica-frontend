@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Minus, Plus, ImageIcon } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
+import { ProductImage } from "@/components/shared/ProductImage";
 import { type CartItem } from "@/lib/cart";
 import { STORE_LOGOS } from "@/lib/store";
 
@@ -28,17 +29,13 @@ export function BasketItemCard({
           href={`/product/${item.id}`}
           className="relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 bg-secondary/40 rounded-lg flex items-center justify-center overflow-visible"
         >
-          {item.imageUrl ? (
-            <Image
-              src={item.imageUrl}
-              alt={item.productName}
-              fill
-              className="object-contain p-1.5 sm:p-2"
-              sizes="80px"
-            />
-          ) : (
-            <ImageIcon className="size-6 sm:size-8 text-border" />
-          )}
+          <ProductImage
+            src={item.imageUrl}
+            alt={item.productName}
+            sizes="80px"
+            className="object-contain p-1.5 sm:p-2"
+            iconClassName="size-6 sm:size-8"
+          />
           {item.discountPct != null && item.discountPct > 0 && (
             <div className="absolute -top-1.5 -left-1.5 z-10 px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[8px] font-bold leading-none">
               -{item.discountPct}%

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, Check, ImageIcon, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Plus } from "lucide-react";
+import { ProductImage } from "@/components/shared/ProductImage";
 import {
   Tooltip,
   TooltipContent,
@@ -16,6 +17,7 @@ import { useCart } from "@/lib/cart";
 interface ProductCardProps {
   id: number;
   imageUrl: string;
+  /** Overrides the alt text, which defaults to the product name. */
   imageAlt?: string;
   brandName: string;
   productName: string;
@@ -36,7 +38,7 @@ interface ProductCardProps {
 export default function ProductCard({
   id,
   imageUrl,
-  imageAlt = "Product image",
+  imageAlt,
   brandName,
   productName,
   size,
@@ -49,9 +51,7 @@ export default function ProductCard({
   stores = [],
   badgeVariant = "discount",
 }: ProductCardProps) {
-  const [imgError, setImgError] = useState(false);
   const [added, setAdded] = useState(false);
-  const hasImage = !!imageUrl && !imgError;
   const { addItem } = useCart();
 
   // Price direction vs. old price (oldPrice is only passed when it differs).
@@ -88,18 +88,13 @@ export default function ProductCard({
   return (
     <Link href={`/product/${id}`} className="group w-64 h-[380px] bg-card rounded-xl p-5 transition-all duration-300 hover:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.06)] flex flex-col">
       <div className="relative aspect-square mb-4 bg-card rounded-lg flex items-center justify-center overflow-hidden border border-border/10">
-        {hasImage ? (
-          <Image
-            src={imageUrl}
-            alt={imageAlt}
-            fill
-            className="w-4/5 h-4/5 object-contain transition-transform duration-500 group-hover:scale-110"
-            sizes="(max-width: 640px) 50vw, 240px"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <ImageIcon className="size-12 text-border" />
-        )}
+        <ProductImage
+          src={imageUrl}
+          alt={imageAlt ?? productName}
+          sizes="(max-width: 640px) 50vw, 240px"
+          className="w-4/5 h-4/5 object-contain transition-transform duration-500 group-hover:scale-110"
+          iconClassName="size-12"
+        />
 
         {discountPct != null &&
           (badgeVariant === "increase" ? discountPct < 0 : discountPct > 0) && (

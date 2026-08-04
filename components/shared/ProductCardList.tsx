@@ -3,13 +3,15 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, Check, ImageIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, Check } from "lucide-react";
+import { ProductImage } from "@/components/shared/ProductImage";
 import { type StoreName, STORE_LOGOS } from "@/lib/store";
 import { useCart } from "@/lib/cart";
 
 interface ProductCardListProps {
   id: number;
   imageUrl: string;
+  /** Overrides the alt text, which defaults to the product name. */
   imageAlt?: string;
   brandName: string;
   productName: string;
@@ -30,7 +32,7 @@ interface ProductCardListProps {
 export default function ProductCardList({
   id,
   imageUrl,
-  imageAlt = "Product image",
+  imageAlt,
   brandName,
   productName,
   size,
@@ -43,9 +45,7 @@ export default function ProductCardList({
   stores = [],
   badgeVariant = "discount",
 }: ProductCardListProps) {
-  const [imgError, setImgError] = useState(false);
   const [added, setAdded] = useState(false);
-  const hasImage = !!imageUrl && !imgError;
   const { addItem } = useCart();
 
   // Price direction vs. old price (oldPrice is only passed when it differs).
@@ -83,18 +83,13 @@ export default function ProductCardList({
     <Link href={`/product/${id}`} className="group block bg-card rounded-xl p-4 shadow-[0_4px_20px_rgba(62,39,35,0.08)] hover:ring-1 hover:ring-primary/40 transition-all">
     <div className="flex items-center gap-4 sm:gap-6">
       <div className="relative w-20 h-20 sm:w-28 sm:h-28 shrink-0 bg-card rounded-lg flex items-center justify-center overflow-visible">
-        {hasImage ? (
-          <Image
-            src={imageUrl}
-            alt={imageAlt}
-            fill
-            className="object-contain p-2 transition-transform duration-500 group-hover:scale-105"
-            sizes="112px"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <ImageIcon className="size-10 text-border" />
-        )}
+        <ProductImage
+          src={imageUrl}
+          alt={imageAlt ?? productName}
+          sizes="112px"
+          className="object-contain p-2 transition-transform duration-500 group-hover:scale-105"
+          iconClassName="size-10"
+        />
 
         {discountPct != null &&
           (badgeVariant === "increase" ? discountPct < 0 : discountPct > 0) && (
