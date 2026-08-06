@@ -10,6 +10,7 @@ import { PriceHistoryChart } from "@/components/shared/PriceHistoryChart";
 import ProductScrollSection from "@/components/shared/ProductScrollSection";
 import { BackButton } from "@/components/shared/BackButton";
 import { AddToCartButton } from "@/components/shared/AddToCartButton";
+import { CardDiscountMark } from "@/components/shared/CardDiscountMark";
 
 interface Props {
   params: Promise<{ product_id: string }>;
@@ -135,11 +136,7 @@ export default async function ProductDetailPage({ params }: Props) {
               >
                 {isAvailable ? "Na zalogi" : "Ni na zalogi"}
               </span>
-              {cardDiscount && (
-                <span className="px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold bg-secondary text-foreground">
-                  Zvestobni popus
-                </span>
-              )}
+              {cardDiscount && <CardDiscountMark variant="badge" />}
             </div>
 
             <div className="flex gap-3 mt-2 sm:mt-4">
