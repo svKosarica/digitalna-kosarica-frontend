@@ -84,6 +84,7 @@ export default function ProductCard({
       discountPct,
       storeName: stores[0],
       size,
+      cardDiscount,
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1200);

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Minus, Plus } from "lucide-react";
 import { ProductImage } from "@/components/shared/ProductImage";
+import { CardDiscountMark } from "@/components/shared/CardDiscountMark";
 import { type CartItem } from "@/lib/cart";
 import { STORE_LOGOS } from "@/lib/store";
 
@@ -77,8 +78,11 @@ export function BasketItemCard({
           <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-5 shrink-0">
             {/* Price */}
             <div className="flex items-baseline gap-1.5 sm:flex-col sm:items-end sm:gap-0">
-              <span className="text-base sm:text-lg font-bold text-foreground whitespace-nowrap">
+              <span className="flex items-center gap-1.5 text-base sm:text-lg font-bold text-foreground whitespace-nowrap">
                 {lineTotal.toFixed(2)} &euro;
+                {item.cardDiscount && (
+                  <CardDiscountMark iconClassName="size-3.5" />
+                )}
               </span>
               {item.quantity > 1 && (
                 <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">

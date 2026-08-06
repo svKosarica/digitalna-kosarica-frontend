@@ -2,10 +2,11 @@
 
 import { useMemo } from "react";
 import Image from "next/image";
-import { ShoppingCart, Trash2, Download } from "lucide-react";
+import { ShoppingCart, Trash2, Download, CreditCard } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { STORE_LOGOS, type StoreName } from "@/lib/store";
 import { BasketItemCard } from "@/components/shared/BasketItemCard";
+import { CARD_DISCOUNT_TOTAL_NOTE } from "@/components/shared/CardDiscountMark";
 
 function exportCSV(items: { productName: string; storeName: string; price: number; quantity: number }[]) {
   const header = "Izdelek,Trgovina,Cena,Količina,Skupaj";
@@ -39,6 +40,9 @@ export default function BasketPage() {
     () => items.reduce((sum, i) => sum + i.price * i.quantity, 0),
     [items],
   );
+
+  // A plain expression, not a useMemo: one pass over a hand-sized cart.
+  const hasCardDiscount = items.some((i) => i.cardDiscount);
 
   if (items.length === 0) {
     return (
@@ -136,6 +140,15 @@ export default function BasketPage() {
                 {grandTotal.toFixed(2)} &euro;
               </span>
             </div>
+
+            {/* Under the grand total rather than per store: the point is that
+                the number as a whole may not be reachable at the till. */}
+            {hasCardDiscount && (
+              <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
+                <CreditCard className="size-3.5 shrink-0 mt-0.5" aria-hidden="true" />
+                {CARD_DISCOUNT_TOTAL_NOTE}
+              </p>
+            )}
           </div>
         </div>
 

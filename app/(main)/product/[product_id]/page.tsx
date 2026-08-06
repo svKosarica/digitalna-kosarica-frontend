@@ -155,6 +155,7 @@ export default async function ProductDetailPage({ params }: Props) {
                       discountPct != null && discountPct > 0 ? discountPct : undefined,
                     storeName,
                     size: size ?? undefined,
+                    cardDiscount,
                   }}
                 />
               )}
