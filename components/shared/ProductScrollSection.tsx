@@ -131,6 +131,7 @@ export default function ProductScrollSection({
               oldPrice={item.oldPrice?.toString() ?? ""}
               discountPct={item.discountPct ?? undefined}
               badgeVariant={badgeVariant}
+              cardDiscount={item.cardDiscount}
               stores={
                 item.store?.name && normalizeStoreName(item.store.name)
                   ? [normalizeStoreName(item.store.name)!]

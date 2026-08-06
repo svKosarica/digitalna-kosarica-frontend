@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, Check } from "lucide-react";
 import { ProductImage } from "@/components/shared/ProductImage";
+import { CardDiscountMark } from "@/components/shared/CardDiscountMark";
 import { type StoreName, STORE_LOGOS } from "@/lib/store";
 import { useCart } from "@/lib/cart";
 
@@ -26,6 +27,8 @@ interface ProductCardListProps {
   discountPct?: number;
   currency?: string;
   stores?: StoreName[];
+  /** True when this price only applies with the store's loyalty card. */
+  cardDiscount?: boolean;
   badgeVariant?: "discount" | "increase";
 }
 
@@ -43,6 +46,7 @@ export default function ProductCardList({
   discountPct,
   currency = "€",
   stores = [],
+  cardDiscount = false,
   badgeVariant = "discount",
 }: ProductCardListProps) {
   const [added, setAdded] = useState(false);
@@ -162,6 +166,9 @@ export default function ProductCardList({
                 {oldPrice} {currency}
               </span>
             )}
+            {cardDiscount && (
+              <CardDiscountMark iconClassName="size-3.5" className="self-center" />
+            )}
           </div>
           {pricePerUnit && (
             <span
@@ -213,6 +220,7 @@ export default function ProductCardList({
                 {oldPrice} {currency}
               </span>
             )}
+            {cardDiscount && <CardDiscountMark className="self-center" />}
           </div>
           {pricePerUnit && (
             <span

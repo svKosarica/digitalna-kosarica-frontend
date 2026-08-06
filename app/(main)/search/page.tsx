@@ -37,6 +37,7 @@ function cardProps(item: DiscountItem) {
         : undefined,
     discountPct:
       item.discountPct != null && item.discountPct > 0 ? item.discountPct : undefined,
+    cardDiscount: item.cardDiscount,
     stores: storeName ? [storeName] : [],
   };
 }

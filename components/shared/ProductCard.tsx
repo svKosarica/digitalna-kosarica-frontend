@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, Check, Plus } from "lucide-react";
 import { ProductImage } from "@/components/shared/ProductImage";
+import { CardDiscountMark } from "@/components/shared/CardDiscountMark";
 import {
   Tooltip,
   TooltipContent,
@@ -32,6 +33,8 @@ interface ProductCardProps {
   discountPct?: number;
   currency?: string;
   stores?: StoreName[];
+  /** True when this price only applies with the store's loyalty card. */
+  cardDiscount?: boolean;
   badgeVariant?: "discount" | "increase";
 }
 
@@ -49,6 +52,7 @@ export default function ProductCard({
   discountPct,
   currency = "€",
   stores = [],
+  cardDiscount = false,
   badgeVariant = "discount",
 }: ProductCardProps) {
   const [added, setAdded] = useState(false);
@@ -184,6 +188,7 @@ export default function ProductCard({
             {priceDir === "down" && (
               <ArrowDown className="size-4 text-green-600" strokeWidth={3} aria-label="Cena padla" />
             )}
+            {cardDiscount && <CardDiscountMark />}
           </div>
           {pricePerUnit && (
             <p
