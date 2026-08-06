@@ -40,15 +40,24 @@ client-side `CartItem`.
 
 ## Copy
 
-One exported constant is the single source of the wording:
+Three strings, all exported from `CardDiscountMark.tsx` so no Slovenian copy is
+written inline anywhere. The string has already gone wrong once in this
+codebase; centralising it is the point.
 
 ```ts
+/** Tooltip text, badge text, and aria-label on the mark itself. */
 export const CARD_DISCOUNT_LABEL = "Cena s kartico ugodnosti";
+
+/** Chart tooltip line. Shorter: the tooltip already says "Cena" above it. */
+export const CARD_DISCOUNT_CHART_NOTE = "S kartico ugodnosti";
+
+/** Basket summary note under the grand total. */
+export const CARD_DISCOUNT_TOTAL_NOTE =
+  "Seštevek vključuje cene s kartico ugodnosti.";
 ```
 
-It is used as the tooltip text, the badge text, and the `aria-label`. The
-string has already gone wrong once in this codebase; centralising it is the
-point.
+`CARD_DISCOUNT_LABEL` is the wording the user chose; the other two are that
+same phrase adapted to a context that already supplies the missing subject.
 
 The existing search filter keeps its current label, "Zvestobni popusti". It
 describes a filter action rather than a price condition, so it reads correctly
@@ -163,9 +172,11 @@ is asked.
 already persisted in `localStorage` deserialize unchanged and render nothing.
 No migration and no storage version bump.
 
-- **Writers** — `ProductCard`, `ProductCardList`, and `AddToCartButton` pass it
-  into `addItem`. The detail page already destructures `cardDiscount`, so it
-  forwards the value it has.
+- **Writers** — `ProductCard` and `ProductCardList` add it to the object they
+  hand `addItem`. The detail page adds it to the `item` prop it builds for
+  `AddToCartButton`; it already destructures `cardDiscount` off the API
+  response. `AddToCartButton` itself needs no change — it is typed
+  `Omit<CartItem, "quantity">` and forwards the whole object.
 - **`BasketItemCard.tsx`** — the icon renders next to the line total, in the
   `flex items-baseline gap-1.5 sm:flex-col` price block.
 - **Summary** — in `app/(main)/basket/page.tsx`, when
