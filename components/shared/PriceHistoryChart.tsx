@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 import type { PriceHistoryEntry } from "@/types/product.types";
+import { CARD_DISCOUNT_CHART_NOTE } from "@/components/shared/CardDiscountMark";
 
 const chartConfig = {
   price: {
@@ -72,7 +73,8 @@ function buildSeries(data: PriceHistoryEntry[], months: number | null) {
 
   const daily = toDailyPoints(sorted);
 
-  let points: { timestamp: string; price: number }[] = daily;
+  let points: { timestamp: string; price: number; cardDiscount: boolean }[] =
+    daily;
 
   if (months !== null) {
     const cutoff = new Date();
@@ -81,20 +83,29 @@ function buildSeries(data: PriceHistoryEntry[], months: number | null) {
     const inWindow = daily.filter((p) => new Date(p.timestamp) >= cutoff);
     const before = daily.filter((p) => new Date(p.timestamp) < cutoff);
 
-    // Carry forward the last known price (or the earliest point if all are
+    // Carry forward the last known reading (or the earliest point if all are
     // inside the window) so the line has a starting anchor at the window edge.
-    const anchorPrice =
-      before.length > 0
-        ? before[before.length - 1].price
-        : (inWindow[0]?.price ?? daily[0].price);
+    // The whole reading is carried, not just its price: an anchor built from a
+    // card-priced day is still a card price, and copying the price alone would
+    // silently redraw it as a regular one.
+    const anchor =
+      before.length > 0 ? before[before.length - 1] : (inWindow[0] ?? daily[0]);
 
-    points = [{ timestamp: cutoff.toISOString(), price: anchorPrice }, ...inWindow];
+    points = [
+      {
+        timestamp: cutoff.toISOString(),
+        price: anchor.price,
+        cardDiscount: anchor.cardDiscount,
+      },
+      ...inWindow,
+    ];
   }
 
   const mapped = points.map((entry) => ({
     time: new Date(entry.timestamp).getTime(),
     date: formatDate(entry.timestamp),
     price: entry.price,
+    cardDiscount: entry.cardDiscount,
   }));
 
   // A single point has no segment to draw, so render it as a flat line
@@ -171,7 +182,20 @@ export function PriceHistoryChart({ data }: PriceHistoryChartProps) {
                   labelFormatter={(_, payload) =>
                     formatDate(new Date(payload?.[0]?.payload?.time).toISOString())
                   }
-                  formatter={(value) => [`${Number(value).toFixed(2)} €`, "Cena"]}
+                  formatter={(value, _name, item) => (
+                    <>
+                      <span className="font-medium text-foreground">
+                        {Number(value).toFixed(2)} €
+                      </span>
+                      <span className="text-muted-foreground">Cena</span>
+                      {(item?.payload as { cardDiscount?: boolean } | undefined)
+                        ?.cardDiscount ? (
+                        <span className="basis-full text-[11px] font-semibold text-primary">
+                          {CARD_DISCOUNT_CHART_NOTE}
+                        </span>
+                      ) : null}
+                    </>
+                  )}
                 />
               }
             />
