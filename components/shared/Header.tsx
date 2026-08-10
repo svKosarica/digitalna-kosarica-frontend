@@ -18,7 +18,7 @@ export function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 bg-sidebar px-4 sm:px-6 h-[60px] flex items-center justify-between border-b border-border/20">
+    <header className="sticky top-0 z-50 bg-sidebar px-4 sm:px-6 lg:px-20 h-[60px] flex items-center justify-between border-b border-border/20">
       <Link href="/" className="flex items-center shrink-0">
         <Image
           src="/images/logo_kosarica.png"

@@ -57,8 +57,13 @@ export default function ProductScrollSection({
   if (!hasItems) return null;
 
   return (
-    <section>
-      <div className="px-4 sm:px-6 pt-8 flex items-end justify-between gap-4">
+    // The horizontal padding lives here, on the ancestor, rather than on the
+    // scroll track below: a scroll container's padding does not clip its
+    // content, so cards would slide through it and touch the viewport edge.
+    // Insetting the whole section makes the track narrower, so the overflow is
+    // clipped at the same gutter every other page section observes.
+    <section className="px-4 sm:px-6 lg:px-20">
+      <div className="pt-8 flex items-end justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
             <h2 className="text-2xl sm:text-[30px] font-semibold text-foreground">
@@ -108,7 +113,6 @@ export default function ProductScrollSection({
         onScroll={updateScrollState}
         className="flex gap-4 py-6 overflow-x-auto"
       >
-        <div className="shrink-0 w-0" />
         {items.map((item) => (
           <div key={item.id} className="shrink-0">
             <ProductCard
@@ -127,6 +131,7 @@ export default function ProductScrollSection({
               oldPrice={item.oldPrice?.toString() ?? ""}
               discountPct={item.discountPct ?? undefined}
               badgeVariant={badgeVariant}
+              cardDiscount={item.cardDiscount}
               stores={
                 item.store?.name && normalizeStoreName(item.store.name)
                   ? [normalizeStoreName(item.store.name)!]
@@ -135,6 +140,7 @@ export default function ProductScrollSection({
             />
           </div>
         ))}
+        {/* Breathing room after the last card at the end of the scroll. */}
         <div className="shrink-0 w-4" />
       </div>
     </section>

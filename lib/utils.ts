@@ -7,12 +7,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Matched as substrings against a lowercased API name, first match winning.
+// The API sends "tus" without the diacritic; the accented alias is defensive.
 const STORE_ALIASES: Record<string, StoreName> = {
   spar: "spar",
   mercator: "mercator",
   merkator: "mercator",
   hofer: "hofer",
   lidl: "lidl",
+  tus: "tus",
+  "tuš": "tus",
 };
 
 /**
@@ -25,6 +29,40 @@ export function productCountLabel(count: number): string {
   if (rest === 2) return `${count} izdelka`;
   if (rest === 3 || rest === 4) return `${count} izdelki`;
   return `${count} izdelkov`;
+}
+
+// Slovenian has a dual, so a count has four forms. Intl implements the rule;
+// lib/format.ts explains why hand-rolling it off the last two digits goes
+// wrong. These are nominative ("2 trgovini"), unlike the locative the results
+// header uses ("v 2 trgovinah") — different grammatical case, different helper.
+const countRules = new Intl.PluralRules("sl");
+
+const STORE_FORMS = {
+  one: "trgovina",
+  two: "trgovini",
+  few: "trgovine",
+  other: "trgovin",
+  zero: "trgovin",
+  many: "trgovin",
+} as const;
+
+const CATEGORY_FORMS = {
+  one: "kategorija",
+  two: "kategoriji",
+  few: "kategorije",
+  other: "kategorij",
+  zero: "kategorij",
+  many: "kategorij",
+} as const;
+
+/** "1 trgovina", "2 trgovini", "3 trgovine", "5 trgovin". */
+export function storeCountLabel(count: number): string {
+  return `${count} ${STORE_FORMS[countRules.select(count)]}`;
+}
+
+/** "1 kategorija", "2 kategoriji", "3 kategorije", "5 kategorij". */
+export function categoryCountLabel(count: number): string {
+  return `${count} ${CATEGORY_FORMS[countRules.select(count)]}`;
 }
 
 export function normalizeStoreName(apiName: string): StoreName | undefined {

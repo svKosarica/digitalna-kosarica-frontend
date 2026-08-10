@@ -15,7 +15,7 @@ export default function MainLayout({
         </Suspense>
         <main className="flex-1 bg-background">{children}</main>
 
-        <footer className="bg-sidebar py-8 px-6 border-t border-border/20">
+        <footer className="bg-sidebar py-8 px-6 lg:px-20 border-t border-border/20">
           <div className="flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
             <div className="mb-4 md:mb-0">
               <p className="font-bold text-foreground text-base mb-1">

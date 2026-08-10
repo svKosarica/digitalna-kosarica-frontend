@@ -23,6 +23,17 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "dm.emea.cms.aldi.cx",
       },
+      {
+        protocol: "https",
+        hostname: "hitrinakup.com",
+      },
+      // Tuš serves from two hosts: hitrinakup.com for the regular catalogue and
+      // www.tus.si for roughly half of its card-discount listings, so this one
+      // only shows up once you browse ?cardDiscount=true.
+      {
+        protocol: "https",
+        hostname: "www.tus.si",
+      },
     ],
   },
 };

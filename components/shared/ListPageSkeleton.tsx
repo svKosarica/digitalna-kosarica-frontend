@@ -11,7 +11,7 @@ interface ListPageSkeletonProps {
  */
 export function ListPageSkeleton({ pillCount }: ListPageSkeletonProps) {
   return (
-    <div className="px-4 sm:px-6 py-6 space-y-6">
+    <div className="px-4 sm:px-6 lg:px-20 py-6 space-y-6">
       <header className="mb-2">
         <Skeleton className="h-9 w-72 rounded-lg" />
         <Skeleton className="h-5 w-56 rounded-lg mt-2" />

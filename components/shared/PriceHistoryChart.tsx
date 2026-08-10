@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 import type { PriceHistoryEntry } from "@/types/product.types";
+import { CARD_DISCOUNT_CHART_NOTE } from "@/components/shared/CardDiscountMark";
 
 const chartConfig = {
   price: {
@@ -38,9 +39,29 @@ function formatDate(timestamp: string) {
 }
 
 /**
- * Builds the chart series for the selected period. Filters the full history
- * client-side, prepends a carry-forward anchor at the window start so the line
- * always spans the window, and duplicates a lone point into a flat line.
+ * Collapses the history to at most one point per calendar day, keeping the
+ * latest reading of each day. Stores are scraped several times a day and an
+ * intraday swing would otherwise draw a spike the day's closing price never
+ * had. Input must be sorted ascending.
+ */
+function toDailyPoints(sorted: PriceHistoryEntry[]) {
+  const byDay = new Map<string, PriceHistoryEntry>();
+
+  for (const entry of sorted) {
+    const d = new Date(entry.timestamp);
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    // Ascending input, so a later reading overwrites an earlier same-day one.
+    byDay.set(key, entry);
+  }
+
+  return [...byDay.values()];
+}
+
+/**
+ * Builds the chart series for the selected period. Reduces the history to one
+ * point per day, filters the window client-side, prepends a carry-forward
+ * anchor at the window start so the line always spans the window, and extends
+ * a lone point into a flat line.
  */
 function buildSeries(data: PriceHistoryEntry[], months: number | null) {
   const sorted = data
@@ -50,34 +71,48 @@ function buildSeries(data: PriceHistoryEntry[], months: number | null) {
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
     );
 
-  let points: { timestamp: string; price: number }[] = sorted;
+  const daily = toDailyPoints(sorted);
+
+  let points: { timestamp: string; price: number; cardDiscount: boolean }[] =
+    daily;
 
   if (months !== null) {
     const cutoff = new Date();
     cutoff.setMonth(cutoff.getMonth() - months);
 
-    const inWindow = sorted.filter((p) => new Date(p.timestamp) >= cutoff);
-    const before = sorted.filter((p) => new Date(p.timestamp) < cutoff);
+    const inWindow = daily.filter((p) => new Date(p.timestamp) >= cutoff);
+    const before = daily.filter((p) => new Date(p.timestamp) < cutoff);
 
-    // Carry forward the last known price (or the earliest point if all are
+    // Carry forward the last known reading (or the earliest point if all are
     // inside the window) so the line has a starting anchor at the window edge.
-    const anchorPrice =
-      before.length > 0
-        ? before[before.length - 1].price
-        : (inWindow[0]?.price ?? sorted[0].price);
+    // The whole reading is carried, not just its price: an anchor built from a
+    // card-priced day is still a card price, and copying the price alone would
+    // silently redraw it as a regular one.
+    const anchor =
+      before.length > 0 ? before[before.length - 1] : (inWindow[0] ?? daily[0]);
 
-    points = [{ timestamp: cutoff.toISOString(), price: anchorPrice }, ...inWindow];
+    points = [
+      {
+        timestamp: cutoff.toISOString(),
+        price: anchor.price,
+        cardDiscount: anchor.cardDiscount,
+      },
+      ...inWindow,
+    ];
   }
 
   const mapped = points.map((entry) => ({
+    time: new Date(entry.timestamp).getTime(),
     date: formatDate(entry.timestamp),
     price: entry.price,
+    cardDiscount: entry.cardDiscount,
   }));
 
-  // A single point has no segment to draw, so render it as a flat line by
-  // duplicating it while keeping the dot marker visible.
+  // A single point has no segment to draw, so render it as a flat line
+  // running to now, keeping the dot marker visible on the original point.
   if (mapped.length === 1) {
-    return [mapped[0], { ...mapped[0] }];
+    const now = new Date();
+    return [mapped[0], { ...mapped[0], time: now.getTime(), date: formatDate(now.toISOString()) }];
   }
 
   return mapped;
@@ -121,7 +156,11 @@ export function PriceHistoryChart({ data }: PriceHistoryChartProps) {
               opacity={0.4}
             />
             <XAxis
-              dataKey="date"
+              dataKey="time"
+              type="number"
+              scale="time"
+              domain={["dataMin", "dataMax"]}
+              tickFormatter={(value: number) => formatDate(new Date(value).toISOString())}
               tickLine={false}
               axisLine={false}
               tickMargin={8}
@@ -140,7 +179,23 @@ export function PriceHistoryChart({ data }: PriceHistoryChartProps) {
             <ChartTooltip
               content={
                 <ChartTooltipContent
-                  formatter={(value) => [`${Number(value).toFixed(2)} €`, "Cena"]}
+                  labelFormatter={(_, payload) =>
+                    formatDate(new Date(payload?.[0]?.payload?.time).toISOString())
+                  }
+                  formatter={(value, _name, item) => (
+                    <>
+                      <span className="font-medium text-foreground">
+                        {Number(value).toFixed(2)} €
+                      </span>
+                      <span className="text-muted-foreground">Cena</span>
+                      {(item?.payload as { cardDiscount?: boolean } | undefined)
+                        ?.cardDiscount ? (
+                        <span className="basis-full text-[11px] font-semibold text-primary">
+                          {CARD_DISCOUNT_CHART_NOTE}
+                        </span>
+                      ) : null}
+                    </>
+                  )}
                 />
               }
             />

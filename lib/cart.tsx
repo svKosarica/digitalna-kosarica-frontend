@@ -28,6 +28,12 @@ export interface CartItem {
    * sizes shipped, and on listings with no parsed size — both render nothing.
    */
   size?: string;
+  /**
+   * True when the stored price only applies with the store's loyalty card.
+   * Optional: carts persisted before this shipped have no flag, and undefined
+   * is falsy, so they render nothing and need no migration.
+   */
+  cardDiscount?: boolean;
 }
 
 interface CartContextValue {

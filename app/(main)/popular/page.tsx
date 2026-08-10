@@ -30,7 +30,7 @@ export default async function PopularPage({ searchParams }: Props) {
   const items = await getMostPopular(LIMIT, onlyDiscounted);
 
   return (
-    <div className="px-4 sm:px-6 py-6 space-y-6">
+    <div className="px-4 sm:px-6 lg:px-20 py-6 space-y-6">
       <header className="mb-2">
         <h1 className="text-3xl font-extrabold tracking-tight text-foreground mb-1 break-words">
           Najbolj priljubljeni

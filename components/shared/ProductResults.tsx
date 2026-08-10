@@ -36,6 +36,7 @@ function cardProps(item: DiscountItem) {
         ? item.oldPrice.toFixed(2)
         : undefined,
     discountPct: item.discountPct ?? undefined,
+    cardDiscount: item.cardDiscount,
     badgeVariant: (item.discountPct != null && item.discountPct < 0
       ? "increase"
       : "discount") as "increase" | "discount",
