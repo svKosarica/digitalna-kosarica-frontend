@@ -94,7 +94,15 @@ Measured above the fold at 1512×900, before any change:
 |---|---|---|---|
 | `public/images/kosarica.png` | 896 KB | 1280×1280 | nowhere — no references |
 | `public/images/hero-image.jpg` | 864 KB | 2400×1536 | 576 CSS px slot, home page |
-| `public/images/logo_kosarica.png` | 384 KB | 750×750 | ~40 px header logo, on every page |
+| `public/images/logo_kosarica.png` | 384 KB | 750×750 | 36 px header logo (mobile only), **favicon**, apple-icon, OG image |
+
+`logo_kosarica.png` is the expensive one. The header renders it at `width={36}`
+and only below `sm`, but `icons.icon` in `app/layout.tsx` also makes it the
+favicon, so **every page in every browser downloads 384 KB for a tab icon**.
+
+`app/layout.tsx:25` additionally declares the OG image as `1200×630` while the
+file is `750×750`. Pre-existing and unrelated to the quota, but it is a wrong
+declaration in a file this work already edits, so it is corrected here.
 
 ## Approach
 
@@ -128,7 +136,7 @@ adding code and function invocations.
 Remote product images ship at full size. A search page stays around 1.7 MB and
 Interspar images stay ~146 KB each. This is accepted: it buys guaranteed
 availability with no external dependency and no metered resource anywhere in the
-render path. The static-asset work below recovers ~1.9 MB elsewhere.
+render path. The static-asset work below recovers ~1.99 MB elsewhere.
 
 ## Changes
 
@@ -154,30 +162,52 @@ icon correctly, as they should.
 
 ### Static assets
 
-| File | Action | Target |
-|---|---|---|
-| `kosarica.png` | delete — zero references in `app`, `components`, `lib`, `stories`, `.storybook` | — |
-| `hero-image.jpg` | resize to 1200 px wide, quality 80 | ~130 KB |
-| `logo_kosarica.png` | recompress in place at 750×750 | ~40 KB |
+Measured with `sharp` 0.34.5, which is already present in the pnpm store as a
+transitive dependency of Next. These are one-off local conversions whose outputs
+are committed — **no new dependency is added** to `package.json`.
 
-`logo_kosarica.png` stays a single file rather than splitting header and OG
-variants. It serves the header logo, the favicon, the apple-icon and the OG
-image; the larger square is what the OG and icon consumers want, and once
-compressed it is small enough that a second asset is not worth the extra file.
+| File | Action | Before | After (measured) |
+|---|---|---|---|
+| `kosarica.png` | delete — zero references in `app`, `components`, `lib`, `stories`, `.storybook` | 896 KB | — |
+| `hero-image.jpg` | resize to 1200 px wide, JPEG q80 mozjpeg | 864 KB | **100 KB** |
+| `logo_kosarica.png` | resize to 512×512, palette PNG | 384 KB | **50 KB** |
 
-`hero-image.jpg` is `priority` with `object-cover` in a slot that is at most
-576 CSS px wide, so 1200 px covers a 2× display.
+These are measured outputs, not estimates. Alternatives were compared and
+rejected: the hero at WebP q80 is 70 KB, but changing the extension would mean
+editing the `src` in `app/(main)/page.tsx` for a 30 KB gain; the logo at 750×750
+palette PNG is 94 KB, and at 256×256 is only 16 KB.
 
-Together this removes ~1.9 MB, including ~380 KB from **every page** via the
-header logo.
+512×512 rather than the cheaper 256×256 because `app/layout.tsx` sets
+`twitter.card: "summary_large_image"`, which requires a minimum of 300 px on the
+short side. 256 would satisfy the favicon (48 px) and the apple-touch-icon
+(180 px) but fall below that Twitter floor. 512 clears every consumer with
+margin, and at 50 KB a second asset is not worth splitting header from OG.
+Palette PNG preserves the alpha channel the logo actually uses.
+
+`hero-image.jpg` is `priority` with `object-cover` in a slot at most 576 CSS px
+wide, so 1200 px still covers a 2× display.
+
+### `app/layout.tsx`
+
+Correct the OG image dimensions from the declared `1200×630` to the true
+`512×512`. Metadata that misdescribes its own asset causes social platforms to
+mis-crop the preview.
+
+This makes the declaration honest; it does not make the asset ideal. A square
+logo is a poor `summary_large_image`, which wants roughly 1.91:1. Producing a
+purpose-built wide OG image is listed as a follow-up rather than folded in here,
+since it is a design task, not an optimization one.
+
+Together this removes **~1.99 MB**, including ~334 KB from every page load,
+since that file is the favicon.
 
 ## Verification
 
 No test files in this repo; verification is in Chrome against the dev server,
 plus a scripted sweep kept in the scratchpad rather than committed.
 
-The sweep loads `/`, `/search?q=mleko`, `/top-discounts`, `/product/32533` and
-`/basket`, scrolls each to the bottom, and asserts:
+The sweep loads `/`, `/search?q=mleko`, `/top-discounts` and `/product/32533`,
+scrolls each to the bottom, and asserts:
 
 1. **zero requests to `/_next/image`** — the regression guard that matters most
 2. zero broken images among visible ones
@@ -186,10 +216,12 @@ The sweep loads `/`, `/search?q=mleko`, `/top-discounts`, `/product/32533` and
 Manual checks in Chrome:
 
 1. A search grid shows photos, not icons, across several stores.
-2. The header logo renders on every page.
-3. The home page hero renders and still looks sharp.
+2. The header logo renders below `sm`, and the favicon appears in the tab.
+3. The home page hero renders and still looks sharp at full width.
 4. `/product/32533` shows its photo.
-5. A product with a null `imageUrl` still shows the fallback icon.
+5. A product with a null `imageUrl` still shows the fallback icon — verified
+   against a known one such as 60204 or 63194.
+6. `/basket` with an item added shows that item's photo.
 
 Production verification after deploy: confirm `/_next/image` appears nowhere in
 the network panel, and that images render for a visitor on a Slovenian
@@ -205,3 +237,5 @@ connection.
   Lidl, Tuš, Aldi) if bandwidth becomes the binding constraint.
 - **Two malformed `imageUrl` rows** in the API, e.g. store product 20116, whose
   value is `https:/spar.logo.si` — a missing slash. A backend data fix.
+- **A purpose-built OG image** at roughly 1.91:1, so `summary_large_image`
+  previews stop being a square logo in a wide frame.
