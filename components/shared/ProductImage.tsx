@@ -9,7 +9,15 @@ interface ProductImageProps {
   /** Empty string, null and undefined all mean "no image". */
   src: string | null | undefined;
   alt: string;
-  /** Required: every call site renders at a different width. */
+  /**
+   * Required: every call site renders at a different width.
+   *
+   * Inert while `images.unoptimized` is set in next.config.ts — Next drops
+   * both `srcSet` and `sizes` before they reach the DOM when unoptimized, so
+   * no `sizes` attribute is emitted on any `<img>`. Kept deliberately for
+   * when that flag is lifted; the four call sites' tuned values should not
+   * be deleted as "unused".
+   */
   sizes: string;
   /** Classes for the <Image> itself — object-fit, padding, hover transform. */
   className?: string;
@@ -52,6 +60,10 @@ export function ProductImage({
       className={className}
       priority={priority}
       onError={() => setFailed(true)}
+      // This is the app's only cross-origin request: every product image comes
+      // straight from a retailer CDN. Withholding the Referer means those six
+      // retailers never learn which page a shopper was viewing.
+      referrerPolicy="no-referrer"
     />
   );
 }
