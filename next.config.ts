@@ -17,6 +17,14 @@ const nextConfig: NextConfig = {
     // Inert while unoptimized is set. Kept because it documents the six hosts
     // the catalogue actually serves from, and re-enabling optimization later
     // should be a one-line change rather than an archaeology exercise.
+    //
+    // It used to also be an allowlist: an unknown host threw in dev and 400'd
+    // in production. With unoptimized set, that check never runs — any host
+    // the API returns is fetched straight by visitors' browsers, with no
+    // error, no build failure, and nothing surfacing anywhere. If the API
+    // starts returning a seventh host, or the known-malformed
+    // `https:/spar.logo.si` row (browsers normalize the missing slash to
+    // `https://spar.logo.si` and request it anyway), nothing will flag it.
     remotePatterns: [
       {
         protocol: "https",

@@ -133,10 +133,31 @@ adding code and function invocations.
 
 ### Trade-off
 
-Remote product images ship at full size. A search page stays around 1.7 MB and
-Interspar images stay ~146 KB each. This is accepted: it buys guaranteed
-availability with no external dependency and no metered resource anywhere in the
-render path. The static-asset work below recovers ~1.99 MB elsewhere.
+Remote product images ship at full size, and `unoptimized` drops `srcSet` as
+well as `sizes`, so the browser has no smaller variant to request even if one
+existed. Measured desktop (1512×900), comparing a dev build with a *working*
+optimizer against a production build after this branch:
+
+| Page | Before | After |
+|---|---|---|
+| `/` | 574 KB | 1,240 KB |
+| `/search?q=mleko` | 815 KB | 2,581 KB |
+| `/top-discounts` | 644 KB | 1,938 KB |
+| `/product/32533` | 480 KB | 358 KB |
+
+Mobile (390×844, DPR 2) is proportionally worse, for the same reason: phones
+now receive byte-for-byte what desktops receive. After this branch: `/` 794 KB,
+`/search?q=mleko` 2,655 KB, `/top-discounts` 2,011 KB.
+
+The worst offender is oversized source images painted into small slots. On
+`/top-discounts` the median natural-to-CSS width ratio is **12.5×** — Interspar
+publishes only its 1001 px `dt_zoom.jpg`, which lands in an 80 CSS px list
+thumbnail. On `/search` it is 3.8×.
+
+The comparison baseline above is a *working* optimizer — real production was
+serving no images at all, so this is still strictly better than the state it
+replaces. Interspar images stay ~146 KB each regardless. The static-asset work
+below separately recovers ~1.99 MB.
 
 ## Changes
 
@@ -239,3 +260,15 @@ connection.
   value is `https:/spar.logo.si` — a missing slash. A backend data fix.
 - **A purpose-built OG image** at roughly 1.91:1, so `summary_large_image`
   previews stop being a square logo in a wide frame.
+- **`metadataBase` points at a domain that does not exist.** `app/layout.tsx:8`
+  sets `APP_URL = "https://digitalna-kosarica.si"`, which is NXDOMAIN (verified
+  against 8.8.8.8). Every `og:image` and `twitter:image` URL is therefore
+  unfetchable, which means the OG dimension correction in this branch has no
+  observable effect until the domain exists or `APP_URL` points at the live
+  host. Pre-existing, not caused by this branch.
+- **Two of the six CDNs send no cache headers.** `hitrinakup.com` and
+  `mercatoronline.si` return no `Cache-Control` and no `Expires`, only
+  `ETag`/`Last-Modified`, so browsers fall back to heuristic freshness.
+  `cdn1.interspar.at` sends `max-age=86400`, `www.lidl.si` a year. Repeat-visit
+  cost is no longer under our control now that the optimizer no longer applies
+  uniform headers from our own origin.
