@@ -24,8 +24,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/images/logo_kosarica.png",
-        width: 1200,
-        height: 630,
+        width: 512,
+        height: 512,
         alt: APP_NAME,
       },
     ],
