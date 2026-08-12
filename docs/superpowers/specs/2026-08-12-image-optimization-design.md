@@ -171,10 +171,23 @@ than an archaeology exercise.
 
 ### `components/shared/ProductImage.tsx`
 
-Unchanged. An `unoptimized` prop here was used as a stopgap during
-investigation and is deliberately **not** kept: the global switch is the
-guarantee, and one mechanism in one place is better than two. The rationale lives
-in `next.config.ts`.
+No `unoptimized` prop here. One was used as a stopgap during investigation and is
+deliberately **not** kept: the global switch is the guarantee, and one mechanism
+in one place is better than two. That rationale lives in `next.config.ts`.
+
+Two changes did land here, both from the final review:
+
+- **`referrerPolicy="no-referrer"`.** Before this branch the app made zero
+  cross-origin requests — fonts are self-hosted, there is no analytics and there
+  are no cookies. Sending images straight to six retailer CDNs hands each of them
+  every visitor's IP and, by default, a `Referer` naming the page being viewed.
+  All six were verified to return `200` with no `Referer` at all, so withholding
+  it costs nothing and keeps the retailers from learning what a shopper browses.
+- **The `sizes` JSDoc.** `unoptimized` drops `srcSet` *and* `sizes` before they
+  reach the DOM, so all four call sites' carefully tuned values are inert. The
+  doc comment now says so, and says they are kept for when the flag is lifted —
+  otherwise a maintainer tunes them to no effect, or deletes them as dead and
+  silently ships wrong sizing the day optimization returns.
 
 The existing `onError` → `ImageIcon` path stays exactly as it is. With the
 optimizer gone it returns to meaning what it was written to mean: this particular
