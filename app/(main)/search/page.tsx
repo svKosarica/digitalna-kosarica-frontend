@@ -80,7 +80,9 @@ export default async function SearchPage({ searchParams }: Props) {
     : [];
 
   const isAvailable = params.available !== "false";
-  const cardDiscount = params.cardDiscount === "true";
+  // Defaults on, like `available`: absent param means the toggle has never been
+  // touched, and the first search is meant to lead with loyalty-card prices.
+  const cardDiscount = params.cardDiscount !== "false";
   const currentPage = Math.max(0, parseInt(typeof params.page === "string" ? params.page : "0", 10) || 0);
 
   const [response, categories] = await Promise.all([
