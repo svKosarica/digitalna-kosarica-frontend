@@ -1,12 +1,15 @@
+import { Suspense } from "react";
 import { searchProducts } from "@/actions/search.actions";
 import { getCategories } from "@/actions/category.actions";
 import ProductCard from "@/components/shared/ProductCard";
 import ProductCardList from "@/components/shared/ProductCardList";
 import { Pagination } from "@/components/shared/Pagination";
 import { SearchFilters } from "@/components/shared/SearchFilters";
+import { SearchResultsSkeleton } from "@/components/shared/SearchResultsSkeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatPricePerUnit, formatSize, pricePerUnitAriaLabel } from "@/lib/format";
 import { cn, normalizeStoreName, productCountLabel } from "@/lib/utils";
-import type { DiscountItem } from "@/types/product.types";
+import type { DiscountItem, SearchResponse } from "@/types/product.types";
 import type { FilterOption, SortOption } from "@/types/search.types";
 import { STORE_MAP, VALID_FILTERS, VALID_SORTS } from "@/types/search.types";
 import { SearchX } from "lucide-react";
@@ -40,6 +43,81 @@ function cardProps(item: DiscountItem) {
     cardDiscount: item.cardDiscount,
     stores: storeName ? [storeName] : [],
   };
+}
+
+/**
+ * The result count, split out so it can sit behind its own Suspense boundary:
+ * it lives in the header, above the filters, which must stay mounted.
+ */
+async function ResultsCount({ promise }: { promise: Promise<SearchResponse> }) {
+  const response = await promise;
+  const storeCount = new Set(
+    response.products.map((item) => item.store?.name).filter(Boolean),
+  ).size;
+
+  return (
+    <p className="text-muted-foreground font-medium">
+      {productCountLabel(response.allItems)} v {storeCount}{" "}
+      {storeCount === 1 ? "trgovini" : "trgovinah"}
+    </p>
+  );
+}
+
+async function SearchResults({
+  promise,
+  query,
+  viewParam,
+}: {
+  promise: Promise<SearchResponse>;
+  query: string;
+  viewParam: "grid" | "list" | null;
+}) {
+  const response = await promise;
+  const results = response.products;
+
+  if (results.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
+        <SearchX size={48} strokeWidth={1.5} />
+        <p className="text-lg">
+          {query ? <>Ni rezultatov za &ldquo;{query}&rdquo;.</> : "Ni rezultatov."}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Three states, and null is the interesting one: it means "the visitor
+          has not chosen", which the server cannot resolve because it does not
+          know the viewport. Rather than guess and correct on the client — which
+          is what the deleted mount effect did, and why results flashed as rows —
+          both layouts render and CSS picks, exactly as ProductResults does on
+          /popular. */}
+      {viewParam !== "list" && (
+        <div
+          className={cn(
+            "grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 justify-items-center",
+            viewParam === null && "hidden sm:grid",
+          )}
+        >
+          {results.map((item) => (
+            <ProductCard key={item.id} {...cardProps(item)} />
+          ))}
+        </div>
+      )}
+
+      {viewParam !== "grid" && (
+        <div className={cn("space-y-4", viewParam === null && "sm:hidden")}>
+          {results.map((item) => (
+            <ProductCardList key={item.id} {...cardProps(item)} />
+          ))}
+        </div>
+      )}
+
+      <Pagination currentPage={response.currentPage} totalPages={response.numberOfPages} />
+    </>
+  );
 }
 
 interface Props {
@@ -85,32 +163,46 @@ export default async function SearchPage({ searchParams }: Props) {
   const cardDiscount = params.cardDiscount !== "false";
   const currentPage = Math.max(0, parseInt(typeof params.page === "string" ? params.page : "0", 10) || 0);
 
-  const [response, categories] = await Promise.all([
-    searchProducts({
-      page: currentPage,
-      size: PAGE_SIZE,
-      query,
-      filter,
-      sortOption: order,
-      isAvailable,
-      cardDiscount,
-      storeIds,
-      // undefined, not [] — omitted means "every category" server-side. Sending
-      // all 36 ids would be wrong: it excludes uncategorized products.
-      categoryIds: categoryIds.length ? categoryIds : undefined,
-    }),
-    getCategories(),
-  ]);
-
-  const results = response.products;
-  // Three states, and null is the interesting one: it means "the visitor has
-  // not chosen", which the server cannot resolve because it does not know the
-  // viewport. Rather than guess and correct on the client — which is what the
-  // deleted mount effect did, and why results flashed as rows — both layouts
-  // render and CSS picks, exactly as ProductResults does on /popular.
   const viewParam =
     params.view === "grid" || params.view === "list" ? params.view : null;
-  const storeCount = new Set(results.map((item) => item.store?.name).filter(Boolean)).size;
+
+  // Deliberately not awaited: the two Suspense boundaries below await it, so
+  // the shell — heading and filters — streams immediately and the boundaries
+  // hold their skeletons until the search resolves. searchProducts swallows its
+  // own errors and resolves to an empty response, so a floating promise here
+  // can never become an unhandled rejection.
+  const responsePromise = searchProducts({
+    page: currentPage,
+    size: PAGE_SIZE,
+    query,
+    filter,
+    sortOption: order,
+    isAvailable,
+    cardDiscount,
+    storeIds,
+    // undefined, not [] — omitted means "every category" server-side. Sending
+    // all 36 ids would be wrong: it excludes uncategorized products.
+    categoryIds: categoryIds.length ? categoryIds : undefined,
+  });
+
+  const categories = await getCategories();
+
+  // Changing this key remounts both boundaries, which is what makes the
+  // skeletons reappear on a filter change: router.replace() is a same-route
+  // navigation, so loading.tsx does not re-run and an already-mounted boundary
+  // would keep showing stale results for the whole request. `view` is excluded
+  // on purpose — it re-renders from data already on the page and must not
+  // flash a skeleton.
+  const resultsKey = JSON.stringify([
+    query,
+    filter,
+    order,
+    storeIds,
+    categoryIds,
+    isAvailable,
+    cardDiscount,
+    currentPage,
+  ]);
 
   return (
     <div className="px-4 sm:px-6 lg:px-20 py-6 space-y-6">
@@ -121,10 +213,19 @@ export default async function SearchPage({ searchParams }: Props) {
         <h1 className="text-3xl font-extrabold tracking-tight text-foreground mb-1 break-words">
           {query ? <>Rezultati za &ldquo;{query}&rdquo;</> : "Vsi izdelki"}
         </h1>
-        <p className="text-muted-foreground font-medium">
-          {productCountLabel(response.allItems)} v {storeCount}{" "}
-          {storeCount === 1 ? "trgovini" : "trgovinah"}
-        </p>
+        {/* h-6 wrapper, not a bare h-5 bar: the real <p> line box is 24px, and
+            a shorter placeholder pulls the whole filter row up 4px when the
+            count resolves. */}
+        <Suspense
+          key={resultsKey}
+          fallback={
+            <div className="h-6 flex items-center">
+              <Skeleton className="h-4 w-48 rounded" />
+            </div>
+          }
+        >
+          <ResultsCount promise={responsePromise} />
+        </Suspense>
         {categoryIds.length > 0 && (
           <p className="mt-1 text-sm text-muted-foreground/80">
             Nekateri izdelki še niso razvrščeni v kategorije.
@@ -134,39 +235,16 @@ export default async function SearchPage({ searchParams }: Props) {
 
       <SearchFilters categories={categories} />
 
-      {results.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
-          <SearchX size={48} strokeWidth={1.5} />
-          <p className="text-lg">
-            {query ? <>Ni rezultatov za &ldquo;{query}&rdquo;.</> : "Ni rezultatov."}
-          </p>
-        </div>
-      ) : (
-        <>
-          {viewParam !== "list" && (
-            <div
-              className={cn(
-                "grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 justify-items-center",
-                viewParam === null && "hidden sm:grid",
-              )}
-            >
-              {results.map((item) => (
-                <ProductCard key={item.id} {...cardProps(item)} />
-              ))}
-            </div>
-          )}
-
-          {viewParam !== "grid" && (
-            <div className={cn("space-y-4", viewParam === null && "sm:hidden")}>
-              {results.map((item) => (
-                <ProductCardList key={item.id} {...cardProps(item)} />
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      <Pagination currentPage={response.currentPage} totalPages={response.numberOfPages} />
+      <Suspense
+        key={resultsKey}
+        fallback={<SearchResultsSkeleton view={viewParam} />}
+      >
+        <SearchResults
+          promise={responsePromise}
+          query={query}
+          viewParam={viewParam}
+        />
+      </Suspense>
     </div>
   );
 }
