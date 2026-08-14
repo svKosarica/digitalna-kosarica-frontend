@@ -63,7 +63,7 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
     : [];
 
   const available = searchParams.get("available") ?? "true";
-  const cardDiscount = searchParams.get("cardDiscount") ?? "false";
+  const cardDiscount = searchParams.get("cardDiscount") ?? "true";
   // Null means "not chosen": the toggle's highlight then follows CSS at the
   // same breakpoint the results do, so neither can flash against the other.
   const viewParamRaw = searchParams.get("view");
