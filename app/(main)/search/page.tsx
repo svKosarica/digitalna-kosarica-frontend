@@ -48,12 +48,33 @@ function cardProps(item: DiscountItem) {
 /**
  * The result count, split out so it can sit behind its own Suspense boundary:
  * it lives in the header, above the filters, which must stay mounted.
+ *
+ * storeCount comes from the caller's store filter, NOT from response.products.
+ * Deriving it from the payload counted only the stores that happened to land on
+ * the current page of 50, so an unfiltered search reported "37256 izdelkov v 3
+ * trgovinah" — a total spanning all 746 pages next to a count spanning one — and
+ * the number moved as you paged. The API returns no store facet, so the filter
+ * is the only global signal available without a request per store.
  */
-async function ResultsCount({ promise }: { promise: Promise<SearchResponse> }) {
+async function ResultsCount({
+  promise,
+  storeCount,
+}: {
+  promise: Promise<SearchResponse>;
+  storeCount: number;
+}) {
   const response = await promise;
-  const storeCount = new Set(
-    response.products.map((item) => item.store?.name).filter(Boolean),
-  ).size;
+
+  // No matches means no stores; naming five would be the filter talking, not
+  // the data. This is the one case where the filter-derived count is plainly
+  // wrong, and it is also the most visible one.
+  if (response.allItems === 0) {
+    return (
+      <p className="text-muted-foreground font-medium">
+        {productCountLabel(0)}
+      </p>
+    );
+  }
 
   return (
     <p className="text-muted-foreground font-medium">
@@ -224,7 +245,7 @@ export default async function SearchPage({ searchParams }: Props) {
             </div>
           }
         >
-          <ResultsCount promise={responsePromise} />
+          <ResultsCount promise={responsePromise} storeCount={storeIds.length} />
         </Suspense>
         {categoryIds.length > 0 && (
           <p className="mt-1 text-sm text-muted-foreground/80">
