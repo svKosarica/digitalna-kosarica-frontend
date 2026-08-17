@@ -7,7 +7,7 @@ import {
 } from "@/components/shared/FilterPopover";
 import { buildCategoryTree, categoryCountLabel } from "@/lib/utils";
 import { ALL_CATEGORIES_LABEL } from "@/types/search.types";
-import type { Category } from "@/types/search.types";
+import type { Category, CategoryTreeNode } from "@/types/search.types";
 
 interface CategoryMultiSelectProps {
   /** Flat list from GET /categories. Empty when the endpoint fails or 204s. */
@@ -22,13 +22,75 @@ function sorted(ids: number[]): number[] {
   return [...ids].sort((a, b) => a - b);
 }
 
+/** One rendered row: the category, how deep it sits, and its root-to-node path. */
+interface CategoryRow {
+  category: Category;
+  depth: number;
+  /** Ids from the root down to and including this category. */
+  path: number[];
+}
+
 /**
- * Two-level category filter whose parent rows are the rollups.
+ * Flattens the forest into render order — a category immediately followed by its
+ * own subtree, which is the order the API already sends.
+ */
+function toRows(tree: CategoryTreeNode[]): CategoryRow[] {
+  const rows: CategoryRow[] = [];
+
+  function walk(nodes: CategoryTreeNode[], depth: number, ancestors: number[]) {
+    for (const node of nodes) {
+      const path = [...ancestors, node.category.id];
+      rows.push({ category: node.category, depth, path });
+      walk(node.children, depth + 1, path);
+    }
+  }
+
+  walk(tree, 0, []);
+  return rows;
+}
+
+function indexById(tree: CategoryTreeNode[]): Map<number, CategoryTreeNode> {
+  const byId = new Map<number, CategoryTreeNode>();
+
+  function walk(nodes: CategoryTreeNode[]) {
+    for (const node of nodes) {
+      byId.set(node.category.id, node);
+      walk(node.children);
+    }
+  }
+
+  walk(tree);
+  return byId;
+}
+
+/** Every id beneath this node, at any depth. */
+function descendantIds(node: CategoryTreeNode | undefined): number[] {
+  if (!node) return [];
+  return node.children.flatMap((child) => [
+    child.category.id,
+    ...descendantIds(child),
+  ]);
+}
+
+// Indent per level. Clamped rather than multiplied so a branch deeper than the
+// drinks one cannot push labels off the 288px popover; past this depth siblings
+// share an indent, which reads worse than truncating.
+const INDENT_BY_DEPTH = ["", "pl-6", "pl-10", "pl-14"] as const;
+
+function indentClass(depth: number): string {
+  return INDENT_BY_DEPTH[Math.min(depth, INDENT_BY_DEPTH.length - 1)];
+}
+
+/**
+ * Category filter over a tree of any depth, where every row is a rollup of its
+ * own subtree.
  *
- * The draft holds ids exactly as they go on the wire: a parent id when that
- * parent is rolled up, child ids otherwise. That is possible because a parent
- * id already matches its children server-side — [2,21] and [2] return the same
- * rows — so a rollup never needs its children listed alongside it.
+ * The draft holds ids exactly as they go on the wire: the highest rolled-up id
+ * of a branch, never that id alongside its own descendants. That is possible
+ * because an id already matches its whole subtree server-side — [4,22,41] and
+ * [4] return the same rows — so a rollup never needs its descendants listed.
+ * Toggling maintains that invariant, which is why at most one ancestor of any
+ * row can be in the draft.
  */
 export function CategoryMultiSelect({
   categories,
@@ -36,14 +98,19 @@ export function CategoryMultiSelect({
   onCommit,
 }: CategoryMultiSelectProps) {
   const tree = buildCategoryTree(categories);
-  const knownIds = new Set(categories.map((category) => category.id));
+  const rows = toRows(tree);
+  const nodesById = indexById(tree);
 
-  // An id this build cannot name — a stale bookmark, or one the API dropped —
-  // is rendered nowhere, so carrying it in the draft would silently re-commit a
-  // filter the visitor can neither see nor clear.
-  const syncFromUrl = () => selected.filter((id) => knownIds.has(id));
+  // Reachable in the tree, not merely present in the flat list: a category
+  // orphaned by a parentCategoryId pointing nowhere is rendered nowhere, so
+  // carrying it in the draft would silently re-commit a filter the visitor can
+  // neither see nor clear.
+  const renderableIds = new Set(rows.map((row) => row.category.id));
+
+  const syncFromUrl = () => selected.filter((id) => renderableIds.has(id));
 
   const [draft, setDraft] = useState<number[]>(syncFromUrl);
+  const inDraft = new Set(draft);
 
   function handleOpenChange(open: boolean) {
     if (open) {
@@ -57,52 +124,63 @@ export function CategoryMultiSelect({
     }
   }
 
-  function toggleParent(parent: Category, children: Category[]) {
-    setDraft((current) => {
-      const childIds = children.map((child) => child.id);
-      const isOn =
-        current.includes(parent.id) ||
-        childIds.some((id) => current.includes(id));
-      const without = current.filter(
-        (id) => id !== parent.id && !childIds.includes(id),
-      );
-      // Rolling up drops the children: the parent id already covers them, so
-      // keeping both would be redundant, never additive.
-      return isOn ? without : [...without, parent.id];
-    });
+  /** The rolled-up ancestor covering this row, if any. */
+  function coveringAncestor(
+    row: CategoryRow,
+    held: Set<number>,
+  ): number | undefined {
+    return row.path.slice(0, -1).find((id) => held.has(id));
   }
 
-  function toggleChild(
-    parent: Category,
-    children: Category[],
-    child: Category,
-  ) {
+  function toggle(row: CategoryRow) {
+    const id = row.category.id;
+    const descendants = descendantIds(nodesById.get(id));
+
+    // Every decision below reads `current` rather than the render-time draft:
+    // two toggles batched into one commit would otherwise both compute against
+    // the pre-batch state and the second would discard the first.
     setDraft((current) => {
-      if (current.includes(parent.id)) {
-        // Expand the rollup to the remaining siblings. This is the one place the
-        // filter narrows further than asked: products filed on the parent with
-        // no subcategory drop out — 991 of 4915 for Pijače — and no combination
-        // of child ids can express "parent minus one child". The visible result
+      const currentSet = new Set(current);
+      const covering = coveringAncestor(row, currentSet);
+
+      if (covering !== undefined) {
+        // Expand the rollup along the path from that ancestor down to this row,
+        // keeping every branch it passes. This is the one place the filter
+        // narrows further than asked: products filed on a passed-over ancestor
+        // with no subcategory drop out — 991 of 4915 for Pijače — and no set of
+        // ids can express "ancestor minus one descendant". The visible result
         // count changing is the only signal available.
-        return [
-          ...current.filter((id) => id !== parent.id),
-          ...children
-            .filter((sibling) => sibling.id !== child.id)
-            .map((sibling) => sibling.id),
-        ];
+        const chain = row.path.slice(row.path.indexOf(covering));
+        const siblings = chain.slice(0, -1).flatMap((stepId, index) =>
+          (nodesById.get(stepId)?.children ?? [])
+            .map((child) => child.category.id)
+            .filter((childId) => childId !== chain[index + 1]),
+        );
+        return [...current.filter((held) => held !== covering), ...siblings];
       }
-      return current.includes(child.id)
-        ? current.filter((id) => id !== child.id)
-        : [...current, child.id];
+
+      const descendantSet = new Set(descendants);
+      const isOn =
+        currentSet.has(id) || descendants.some((d) => currentSet.has(d));
+      const without = current.filter(
+        (held) => held !== id && !descendantSet.has(held),
+      );
+      // Rolling up drops the descendants: this id already covers them, so
+      // keeping both would be redundant, never additive.
+      return isOn ? without : [...without, id];
     });
   }
 
-  function parentState(
-    parent: Category,
-    children: Category[],
-  ): boolean | "indeterminate" {
-    if (draft.includes(parent.id)) return true;
-    return children.some((child) => draft.includes(child.id))
+  function rowState(row: CategoryRow): boolean | "indeterminate" {
+    if (
+      inDraft.has(row.category.id) ||
+      coveringAncestor(row, inDraft) !== undefined
+    ) {
+      return true;
+    }
+    return descendantIds(nodesById.get(row.category.id)).some((id) =>
+      inDraft.has(id),
+    )
       ? "indeterminate"
       : false;
   }
@@ -111,8 +189,7 @@ export function CategoryMultiSelect({
     draft.length === 0
       ? ALL_CATEGORIES_LABEL
       : draft.length === 1
-        ? (categories.find((category) => category.id === draft[0])?.name ??
-          ALL_CATEGORIES_LABEL)
+        ? (nodesById.get(draft[0])?.category.name ?? ALL_CATEGORIES_LABEL)
         : categoryCountLabel(draft.length);
 
   return (
@@ -130,25 +207,15 @@ export function CategoryMultiSelect({
         />
       }
     >
-      {tree.map(({ parent, children }) => (
-        <div key={parent.id}>
-          <FilterCheckboxRow
-            id={`category-${parent.id}`}
-            checked={parentState(parent, children)}
-            onToggle={() => toggleParent(parent, children)}
-            label={parent.name}
-          />
-          {children.map((child) => (
-            <FilterCheckboxRow
-              key={child.id}
-              id={`category-${child.id}`}
-              checked={draft.includes(parent.id) || draft.includes(child.id)}
-              onToggle={() => toggleChild(parent, children, child)}
-              label={child.name}
-              className="pl-6"
-            />
-          ))}
-        </div>
+      {rows.map((row) => (
+        <FilterCheckboxRow
+          key={row.category.id}
+          id={`category-${row.category.id}`}
+          checked={rowState(row)}
+          onToggle={() => toggle(row)}
+          label={row.category.name}
+          className={indentClass(row.depth)}
+        />
       ))}
     </FilterPopover>
   );

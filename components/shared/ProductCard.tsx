@@ -13,6 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { STORE_LOGOS, type StoreName } from "@/lib/store";
+import { formatEurAmount } from "@/lib/format";
 import { useCart } from "@/lib/cart";
 
 interface ProductCardProps {
@@ -28,8 +29,10 @@ interface ProductCardProps {
   pricePerUnit?: string;
   /** Spoken form of pricePerUnit, e.g. "cena na liter: 1,16 €". */
   pricePerUnitAria?: string;
-  price: string;
-  oldPrice?: string;
+  /** Raw euro amount. The card formats it; callers must not pre-format. */
+  price: number;
+  /** Raw euro amount, passed only when it differs from `price`. */
+  oldPrice?: number;
   discountPct?: number;
   currency?: string;
   stores?: StoreName[];
@@ -59,11 +62,9 @@ export default function ProductCard({
   const { addItem } = useCart();
 
   // Price direction vs. old price (oldPrice is only passed when it differs).
-  const oldPriceNum = oldPrice ? parseFloat(oldPrice) : NaN;
-  const priceNum = parseFloat(price);
   const priceDir: "up" | "down" | null =
-    !Number.isNaN(oldPriceNum) && !Number.isNaN(priceNum) && oldPriceNum !== priceNum
-      ? priceNum > oldPriceNum
+    oldPrice != null && oldPrice !== price
+      ? price > oldPrice
         ? "up"
         : "down"
       : null;
@@ -79,8 +80,8 @@ export default function ProductCard({
       productName,
       brandName,
       imageUrl,
-      price: parseFloat(price),
-      oldPrice: oldPrice ? parseFloat(oldPrice) : undefined,
+      price,
+      oldPrice,
       discountPct,
       storeName: stores[0],
       size,
@@ -170,18 +171,18 @@ export default function ProductCard({
 
       <div className="mt-auto flex items-end justify-between">
         <div>
-          {oldPrice && (
+          {oldPrice != null && (
             <p
               className={`text-xs text-accent-foreground mb-0.5 ${
                 isIncrease ? "" : "line-through"
               }`}
             >
-              {oldPrice} {currency}
+              {formatEurAmount(oldPrice)} {currency}
             </p>
           )}
           <div className="flex items-center gap-1">
             <p className="text-2xl font-bold text-foreground">
-              {price} {currency}
+              {formatEurAmount(price)} {currency}
             </p>
             {priceDir === "up" && (
               <ArrowUp className="size-4 text-red-500" strokeWidth={3} aria-label="Cena narasla" />

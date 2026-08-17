@@ -3,7 +3,12 @@ import Image from "next/image";
 import { ExternalLink } from "lucide-react";
 import { ProductImage } from "@/components/shared/ProductImage";
 import { getProduct, getSimilarProducts } from "@/actions/product.actions";
-import { formatPricePerUnit, formatSize, pricePerUnitAriaLabel } from "@/lib/format";
+import {
+  formatEurAmount,
+  formatPricePerUnit,
+  formatSize,
+  pricePerUnitAriaLabel,
+} from "@/lib/format";
 import { normalizeStoreName } from "@/lib/utils";
 import { STORE_LOGOS } from "@/lib/store";
 import { PriceHistoryChart } from "@/components/shared/PriceHistoryChart";
@@ -107,11 +112,11 @@ export default async function ProductDetailPage({ params }: Props) {
 
             <div className="flex items-baseline gap-2 sm:gap-3">
               <span className="text-2xl sm:text-3xl font-extrabold text-primary">
-                {price.toFixed(2)} &euro;
+                {formatEurAmount(price)} &euro;
               </span>
               {oldPrice != null && oldPrice !== price && (
                 <span className="text-base sm:text-lg font-semibold text-accent-foreground line-through">
-                  {oldPrice.toFixed(2)} &euro;
+                  {formatEurAmount(oldPrice)} &euro;
                 </span>
               )}
             </div>

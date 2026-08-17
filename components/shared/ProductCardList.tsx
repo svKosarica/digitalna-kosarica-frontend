@@ -7,6 +7,7 @@ import { ArrowDown, ArrowUp, Check } from "lucide-react";
 import { ProductImage } from "@/components/shared/ProductImage";
 import { CardDiscountMark } from "@/components/shared/CardDiscountMark";
 import { type StoreName, STORE_LOGOS } from "@/lib/store";
+import { formatEurAmount } from "@/lib/format";
 import { useCart } from "@/lib/cart";
 
 interface ProductCardListProps {
@@ -22,8 +23,10 @@ interface ProductCardListProps {
   pricePerUnit?: string;
   /** Spoken form of pricePerUnit, e.g. "cena na liter: 1,16 €". */
   pricePerUnitAria?: string;
-  price: string;
-  oldPrice?: string;
+  /** Raw euro amount. The card formats it; callers must not pre-format. */
+  price: number;
+  /** Raw euro amount, passed only when it differs from `price`. */
+  oldPrice?: number;
   discountPct?: number;
   currency?: string;
   stores?: StoreName[];
@@ -53,11 +56,9 @@ export default function ProductCardList({
   const { addItem } = useCart();
 
   // Price direction vs. old price (oldPrice is only passed when it differs).
-  const oldPriceNum = oldPrice ? parseFloat(oldPrice) : NaN;
-  const priceNum = parseFloat(price);
   const priceDir: "up" | "down" | null =
-    !Number.isNaN(oldPriceNum) && !Number.isNaN(priceNum) && oldPriceNum !== priceNum
-      ? priceNum > oldPriceNum
+    oldPrice != null && oldPrice !== price
+      ? price > oldPrice
         ? "up"
         : "down"
       : null;
@@ -73,8 +74,8 @@ export default function ProductCardList({
       productName,
       brandName,
       imageUrl,
-      price: parseFloat(price),
-      oldPrice: oldPrice ? parseFloat(oldPrice) : undefined,
+      price,
+      oldPrice,
       discountPct,
       storeName: stores[0],
       size,
@@ -150,7 +151,7 @@ export default function ProductCardList({
         <div className="flex flex-col items-start gap-2 sm:hidden">
           <div className="flex flex-wrap items-baseline gap-1.5">
             <span className="text-lg font-bold text-foreground">
-              {price} {currency}
+              {formatEurAmount(price)} {currency}
             </span>
             {priceDir === "up" && (
               <ArrowUp className="size-3.5 self-center text-red-500" strokeWidth={3} aria-label="Cena narasla" />
@@ -158,13 +159,13 @@ export default function ProductCardList({
             {priceDir === "down" && (
               <ArrowDown className="size-3.5 self-center text-green-600" strokeWidth={3} aria-label="Cena padla" />
             )}
-            {oldPrice && (
+            {oldPrice != null && (
               <span
                 className={`text-xs font-semibold text-accent-foreground ${
                   isIncrease ? "" : "line-through"
                 }`}
               >
-                {oldPrice} {currency}
+                {formatEurAmount(oldPrice)} {currency}
               </span>
             )}
             {cardDiscount && (
@@ -204,7 +205,7 @@ export default function ProductCardList({
         <div className="flex flex-col items-end gap-0.5">
           <div className="flex items-baseline gap-1.5">
             <span className="text-2xl font-bold text-foreground">
-              {price} {currency}
+              {formatEurAmount(price)} {currency}
             </span>
             {priceDir === "up" && (
               <ArrowUp className="size-4 self-center text-red-500" strokeWidth={3} aria-label="Cena narasla" />
@@ -212,13 +213,13 @@ export default function ProductCardList({
             {priceDir === "down" && (
               <ArrowDown className="size-4 self-center text-green-600" strokeWidth={3} aria-label="Cena padla" />
             )}
-            {oldPrice && (
+            {oldPrice != null && (
               <span
                 className={`text-sm font-semibold text-accent-foreground ${
                   isIncrease ? "" : "line-through"
                 }`}
               >
-                {oldPrice} {currency}
+                {formatEurAmount(oldPrice)} {currency}
               </span>
             )}
             {cardDiscount && <CardDiscountMark className="self-center" />}

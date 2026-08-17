@@ -30,10 +30,10 @@ function cardProps(item: DiscountItem) {
     pricePerUnit: formatPricePerUnit(item.pricePerUnit, item.baseUnit) ?? undefined,
     pricePerUnitAria:
       pricePerUnitAriaLabel(item.pricePerUnit, item.baseUnit) ?? undefined,
-    price: item.price?.toFixed(2) ?? "0.00",
+    price: item.price ?? 0,
     oldPrice:
       item.oldPrice != null && item.oldPrice !== item.price
-        ? item.oldPrice.toFixed(2)
+        ? item.oldPrice
         : undefined,
     discountPct: item.discountPct ?? undefined,
     cardDiscount: item.cardDiscount,
