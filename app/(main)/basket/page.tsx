@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import Image from "next/image";
 import { ShoppingCart, Trash2, Download, CreditCard } from "lucide-react";
 import { useCart } from "@/lib/cart";
+import { formatEurAmount } from "@/lib/format";
 import { STORE_LOGOS, type StoreName } from "@/lib/store";
 import { BasketItemCard } from "@/components/shared/BasketItemCard";
 import { CARD_DISCOUNT_TOTAL_NOTE } from "@/components/shared/CardDiscountMark";
@@ -127,7 +128,7 @@ export default function BasketPage() {
                       <span className="font-bold text-foreground">{logo?.label ?? name}</span>
                     </div>
                     <span className="text-xl font-extrabold text-foreground">
-                      {total.toFixed(2)} &euro;
+                      {formatEurAmount(total)} &euro;
                     </span>
                   </div>
                 );
@@ -137,7 +138,7 @@ export default function BasketPage() {
             <div className="mt-6 pt-6 border-t border-border/30 flex items-center justify-between">
               <span className="text-foreground font-semibold">Skupaj</span>
               <span className="text-2xl font-extrabold text-primary">
-                {grandTotal.toFixed(2)} &euro;
+                {formatEurAmount(grandTotal)} &euro;
               </span>
             </div>
 

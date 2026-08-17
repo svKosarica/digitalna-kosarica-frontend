@@ -60,8 +60,13 @@ const price4 = new Intl.NumberFormat("sl-SI", {
  * as 3000 pieces, so €/piece is 0.0013. Rendering that as "0,00 €/kos" reads as
  * free, and in a price-per-unit sort it would leave a run of identical-looking
  * rows in an order the reader cannot check.
+ *
+ * Every euro amount in the app goes through here — shelf price, old price,
+ * per-unit price, cart line, basket total, chart axis — so they all render the
+ * Slovenian decimal comma. `toFixed` yields a decimal point and is never right
+ * for a price on screen.
  */
-function formatEurAmount(value: number): string {
+export function formatEurAmount(value: number): string {
   const collapsesToZero = value !== 0 && Math.abs(value) < 0.005;
   return collapsesToZero ? price4.format(value) : price2.format(value);
 }

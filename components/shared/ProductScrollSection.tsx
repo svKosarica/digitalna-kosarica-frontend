@@ -127,8 +127,12 @@ export default function ProductScrollSection({
               pricePerUnitAria={
                 pricePerUnitAriaLabel(item.pricePerUnit, item.baseUnit) ?? undefined
               }
-              price={item.price?.toString() ?? ""}
-              oldPrice={item.oldPrice?.toString() ?? ""}
+              price={item.price ?? 0}
+              oldPrice={
+                item.oldPrice != null && item.oldPrice !== item.price
+                  ? item.oldPrice
+                  : undefined
+              }
               discountPct={item.discountPct ?? undefined}
               badgeVariant={badgeVariant}
               cardDiscount={item.cardDiscount}

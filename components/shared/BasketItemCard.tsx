@@ -6,6 +6,7 @@ import { Minus, Plus } from "lucide-react";
 import { ProductImage } from "@/components/shared/ProductImage";
 import { CardDiscountMark } from "@/components/shared/CardDiscountMark";
 import { type CartItem } from "@/lib/cart";
+import { formatEurAmount } from "@/lib/format";
 import { STORE_LOGOS } from "@/lib/store";
 
 interface BasketItemCardProps {
@@ -79,7 +80,7 @@ export function BasketItemCard({
             {/* Price */}
             <div className="flex items-baseline gap-1.5 sm:flex-col sm:items-end sm:gap-0">
               <span className="flex items-center gap-1.5 text-base sm:text-lg font-bold text-foreground whitespace-nowrap">
-                {lineTotal.toFixed(2)} &euro;
+                {formatEurAmount(lineTotal)} &euro;
                 {item.cardDiscount && (
                   <CardDiscountMark iconClassName="size-3.5" />
                 )}
@@ -88,7 +89,7 @@ export function BasketItemCard({
                 <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
                   {/* "/ izdelek", not "/ kos": this is the per-cart-item price,
                       not the API's price-per-piece now shown beside it. */}
-                  {item.price.toFixed(2)} &euro; / izdelek
+                  {formatEurAmount(item.price)} &euro; / izdelek
                 </span>
               )}
             </div>
