@@ -74,12 +74,18 @@ export function normalizeStoreName(apiName: string): StoreName | undefined {
 }
 
 /**
- * Turns the flat GET /categories array into one entry per top-level category.
+ * Turns the flat GET /categories array into a forest rooted at the top-level
+ * categories.
  *
- * API array order is preserved at both levels — the category set drifts, so
- * never sort or hardcode it. A child whose parentCategoryId matches no
- * top-level category is dropped rather than rendered as an orphan. The tree is
- * exactly two levels deep; the backend asserts this.
+ * Depth is whatever the data says. This used to hand back roots plus one level
+ * of children, which silently swallowed the drinks leaves the moment the
+ * backend nested Vino under Alkoholne pijače under Pijače: they were bucketed
+ * under a non-root parent id that nothing ever looked up.
+ *
+ * API array order is preserved at every level — the category set drifts and
+ * the backend already emits it depth-first, heaviest branch first, so never
+ * sort or hardcode it. A category whose parentCategoryId matches nothing
+ * reachable from a root is dropped rather than rendered as an orphan.
  *
  * A top-level category arrives with parentCategoryId === null. Both checks
  * below use loose equality so an omitted field (parentCategoryId undefined —
@@ -101,10 +107,22 @@ export function buildCategoryTree(categories: Category[]): CategoryTreeNode[] {
     }
   }
 
+  // parent_category carries no constraint against a cycle, and unlike the old
+  // single-level lookup this recurses — an A→B→A loop would blow the stack and
+  // take the whole page down, so a category already on the current path is
+  // treated as absent.
+  const onPath = new Set<number>();
+
+  function subtreeOf(parent: Category): CategoryTreeNode {
+    onPath.add(parent.id);
+    const children = (childrenByParentId.get(parent.id) ?? [])
+      .filter((child) => !onPath.has(child.id))
+      .map(subtreeOf);
+    onPath.delete(parent.id);
+    return { category: parent, children };
+  }
+
   return categories
     .filter((category) => category.parentCategoryId == null)
-    .map((parent) => ({
-      parent,
-      children: childrenByParentId.get(parent.id) ?? [],
-    }));
+    .map(subtreeOf);
 }

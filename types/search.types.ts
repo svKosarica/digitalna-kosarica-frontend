@@ -29,7 +29,12 @@ export interface SearchRequest {
   storeIds?: number[];
   isAvailable: boolean;
   cardDiscount: boolean;
-  /** Omitted / null / [] all mean "every category". A parent id matches its children too. */
+  /**
+   * Omitted / null / [] all mean "every category". A parent id matches its
+   * whole subtree, not just its direct children — the backend's rollup went
+   * recursive when the drinks branch gained a third level, so sending Pijače
+   * also matches a listing filed only on the Vino leaf.
+   */
   categoryIds?: number[];
 }
 
@@ -49,10 +54,14 @@ export interface Category {
   name: string;
 }
 
-/** One top-level category with its subcategories. The tree is exactly two levels deep. */
+/**
+ * One category with its subtree. Depth is not fixed: the taxonomy was two
+ * levels until the drinks branch gained a third (Pijače > Alkoholne pijače >
+ * Vino), so nothing here may assume a leaf is reached at any particular level.
+ */
 export interface CategoryTreeNode {
-  parent: Category;
-  children: Category[];
+  category: Category;
+  children: CategoryTreeNode[];
 }
 
 /**
