@@ -81,7 +81,7 @@ export default function ProductScrollSection({
               </Link>
             )}
           </div>
-          <p className="text-[14px] font-medium text-muted-foreground uppercase tracking-wider mt-1">
+          <p className="text-[14px] font-semibold text-muted-foreground uppercase tracking-wider mt-1">
             {subtitle}
           </p>
         </div>
