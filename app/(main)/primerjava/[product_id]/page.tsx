@@ -177,7 +177,7 @@ export default async function ProductComparisonPage({ params }: Props) {
                 <Info className="size-4 shrink-0 mt-0.5" aria-hidden />
                 {/* The same words the list card uses, imported rather than retyped so
                     the two surfaces cannot drift apart. */}
-                Najcenejša ponudba: {STOCK_CHEAPEST_OUT}.
+                Pozor: {STOCK_CHEAPEST_OUT}.
               </p>
             )}
 
