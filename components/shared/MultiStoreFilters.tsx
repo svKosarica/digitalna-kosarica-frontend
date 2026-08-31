@@ -156,12 +156,26 @@ export function MultiStoreFilters({ categories }: MultiStoreFiltersProps) {
               value={sort}
               onValueChange={(value) => commit({ sort: value })}
             >
-              <SelectTrigger className="w-[190px]" aria-label="Razvrsti">
+              {/* Colours copied from SearchFilters' sort Select so the two
+                  toolbars read as one component: bare shadcn defaults made this
+                  dropdown lighter than /search's. */}
+              <SelectTrigger
+                className="flex-1 min-w-0 sm:flex-none sm:w-[190px] bg-card border-border text-foreground font-bold text-sm"
+                aria-label="Razvrsti"
+              >
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent
+                position="popper"
+                sideOffset={4}
+                className="bg-card border-border"
+              >
                 {VALID_MULTI_STORE_SORTS.map((option) => (
-                  <SelectItem key={option} value={option}>
+                  <SelectItem
+                    key={option}
+                    value={option}
+                    className="font-semibold text-foreground focus:bg-secondary focus:text-foreground"
+                  >
                     {SORT_LABELS[option]}
                   </SelectItem>
                 ))}
@@ -175,7 +189,20 @@ export function MultiStoreFilters({ categories }: MultiStoreFiltersProps) {
               onClick={() => commit({ view: "grid" }, false)}
               aria-label="Mrežni prikaz"
               aria-pressed={view === "grid"}
-              className={cn(TOGGLE_BASE, view === "grid" ? TOGGLE_ON : TOGGLE_OFF)}
+              className={cn(
+                TOGGLE_BASE,
+                view === "grid" && TOGGLE_ON,
+                view === "list" && TOGGLE_OFF,
+                // Unchosen (arriving from the home rail's "Več izdelkov", which
+                // sets no ?view): inactive on phones, active from sm up — the
+                // breakpoint the results themselves switch at. A flat
+                // `view === "grid" ? ON : OFF` left BOTH icons dark on arrival,
+                // even though the grid is what renders. Mirrors SearchFilters.
+                view === null && [
+                  TOGGLE_OFF,
+                  "sm:bg-card sm:text-primary sm:border-primary/30",
+                ],
+              )}
             >
               <LayoutGrid className="size-5" />
             </button>
@@ -184,7 +211,17 @@ export function MultiStoreFilters({ categories }: MultiStoreFiltersProps) {
               onClick={() => commit({ view: "list" }, false)}
               aria-label="Seznamski prikaz"
               aria-pressed={view === "list"}
-              className={cn(TOGGLE_BASE, view === "list" ? TOGGLE_ON : TOGGLE_OFF)}
+              className={cn(
+                TOGGLE_BASE,
+                view === "list" && TOGGLE_ON,
+                view === "grid" && TOGGLE_OFF,
+                // The inverse of the grid button: rows are what CSS renders
+                // below sm, so this reads active there and inactive above.
+                view === null && [
+                  TOGGLE_ON,
+                  "sm:bg-transparent sm:text-muted-foreground/40 sm:border-transparent sm:hover:text-primary",
+                ],
+              )}
             >
               <List className="size-5" />
             </button>

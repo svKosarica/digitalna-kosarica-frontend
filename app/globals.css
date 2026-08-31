@@ -106,7 +106,10 @@
   --store-lidl: #1f5fa8;
   --store-mercator: #b3242c;
   --store-hofer: #6b3fa0;
-  --store-tus: #c2610a;
+  /* Yellow, but deepened to a golden yellow: the chart card is #ffffff, and a
+     bright #ffe000-type yellow on a 2px line is close to invisible against it.
+     This is the darkest value that still reads unmistakably as yellow. */
+  --store-tus: #eab308;
   --sidebar: #faf4e2;
   --sidebar-foreground: #3e2723;
   --sidebar-primary: #8e3b2e;
