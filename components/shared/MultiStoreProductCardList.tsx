@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ProductImage } from "@/components/shared/ProductImage";
 import { StoreLogos } from "@/components/shared/StoreLogos";
 import { formatEurAmount } from "@/lib/format";
+import { storeCountLabel } from "@/lib/utils";
 import type { MultiStoreCardProps } from "@/components/shared/MultiStoreProductCard";
 
 /**
@@ -124,7 +125,12 @@ export default function MultiStoreProductCardList({
 
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-semibold text-muted-foreground">
-              {storeCount === 1 ? "1 trgovina" : `${storeCount} trgovin`}
+              {/* storeCountLabel, not an inline ternary: this is a BARE nominative
+                  count, where Slovenian has four forms (1 trgovina, 2 trgovini,
+                  3/4 trgovine, 5+ trgovin). Note the grid card's "v N trgovinah" is
+                  a different, LOCATIVE frame where a two-branch form IS correct —
+                  do not "unify" the two. */}
+              {storeCountLabel(storeCount)}
             </span>
             <StoreLogos stores={stores} max={5} size="lg" overlap />
           </div>
