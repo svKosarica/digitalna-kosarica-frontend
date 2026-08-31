@@ -589,7 +589,7 @@ first), keyed by `storeProductId`.
 - The store's own `title` differs per store for the same article; show it as a
   small secondary line when it differs from `product.title`, so a shopper can
   tell the store is really selling the same thing.
-- A `lastSeenAt` older than ~7 days shows a quiet `nazadnje videno …` note.
+- A `lastSeenAt` older than ~7 days shows a quiet `nazadnje videno …` note. **(Verified inert during implementation — the backend refreshes `lastSeenAt` on every scrape whether or not the listing is still real, so across ~45 sampled listings the maximum age was 0 days and this note never renders. The code is retained and correct; the signal is not usable on this API. See the Risks table.)**
 
 Then `ProductScrollSection` "Sorodni izdelki" is **not** rendered: the similar
 endpoint keys on `storeProductId` and returns store listings, which would mix
