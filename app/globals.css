@@ -93,6 +93,20 @@
   --chart-3: #5d4037;
   --chart-4: #bcaaa4;
   --chart-5: #d7ccc8;
+  /* Store line colours for the multi-store price chart.
+     NOT drawn from --chart-1..5: those are a sequential warm ramp, and
+     --chart-4 (#bcaaa4) and --chart-5 (#d7ccc8) are near-identical light
+     beiges that vanish against --card. Five simultaneous store lines need a
+     qualitative palette, each ≥3:1 against the cream card.
+     Hofer and Tuš are deliberately OFF-brand: Lidl and Hofer are both blue
+     and Mercator and Tuš both red, so brand colours would collide. The logo
+     beside each legend entry does the identifying; the colour only has to
+     make one line trackable against the other four. */
+  --store-spar: #2f7d4f;
+  --store-lidl: #1f5fa8;
+  --store-mercator: #b3242c;
+  --store-hofer: #6b3fa0;
+  --store-tus: #c2610a;
   --sidebar: #faf4e2;
   --sidebar-foreground: #3e2723;
   --sidebar-primary: #8e3b2e;
