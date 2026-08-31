@@ -1,5 +1,5 @@
 import type { BaseUnit } from "@/types/product.types";
-import type { MultiStoreProduct, MultiStoreSort } from "@/types/comparison.types";
+import type { MultiStoreProduct, MultiStoreProductPage, MultiStoreSort } from "@/types/comparison.types";
 
 /**
  * Price and label logic for the multi-store comparison pages.
@@ -186,11 +186,27 @@ export function seriesVariants<
   });
 }
 
-/** Resolves to this when a list request fails, so a page never throws. */
-export const NO_MULTI_STORE_PAGE = {
+/**
+ * Resolves to this when a list request fails, so a page never throws.
+ *
+ * Frozen, and frozen as a STATEMENT rather than inline. This is one shared object
+ * for the whole server-process lifetime — every failed request hands back the same
+ * instance and the same `products` array — so an in-place `.sort()` or `.push()` by
+ * any caller would corrupt the empty state for every later request on that instance.
+ * Freezing makes that a loud throw in strict mode instead of silent cross-request
+ * contamination.
+ *
+ * Inline `Object.freeze([])` is deliberately avoided: it would type `products` as
+ * `readonly MultiStoreProduct[]`, which is NOT assignable to `MultiStoreProduct[]`
+ * and would break getMultiStoreProducts' return type. Declaring the typed literal
+ * first and freezing afterwards keeps the exported type exactly MultiStoreProductPage.
+ */
+export const NO_MULTI_STORE_PAGE: MultiStoreProductPage = {
   products: [],
   currentPage: 0,
   numberOfPages: 0,
   currentItems: 0,
   allItems: 0,
 };
+Object.freeze(NO_MULTI_STORE_PAGE);
+Object.freeze(NO_MULTI_STORE_PAGE.products);
