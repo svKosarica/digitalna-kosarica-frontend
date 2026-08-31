@@ -30,12 +30,19 @@ function CardShell() {
 
 function RowShell() {
   return (
-    <div className="bg-card rounded-xl p-4 flex items-center gap-4">
+    <div className="bg-card rounded-xl p-4 flex items-center gap-4 sm:gap-6">
       <Skeleton className="w-20 h-20 sm:w-28 sm:h-28 rounded-lg shrink-0" />
       <div className="grow min-w-0 flex flex-col gap-2">
         <Skeleton className="h-3 w-20 rounded" />
         <Skeleton className="h-5 w-3/4 rounded" />
-        <Skeleton className="h-3 w-32 rounded sm:hidden" />
+        {/* Mirrors the real card's mobile price block: a text-lg price line plus a
+            text-[11px] secondary line in a gap-1 column. A single short bar here
+            made the row grow when data landed, because unlike the grid card this
+            row has no fixed height. */}
+        <div className="flex flex-col items-start gap-1 sm:hidden">
+          <Skeleton className="h-7 w-24 rounded" />
+          <Skeleton className="h-3 w-32 rounded" />
+        </div>
       </div>
       <div className="hidden sm:flex flex-col items-end gap-2 shrink-0 min-w-[200px]">
         <Skeleton className="h-8 w-28 rounded" />
