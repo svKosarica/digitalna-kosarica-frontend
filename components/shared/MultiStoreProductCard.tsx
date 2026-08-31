@@ -93,11 +93,16 @@ export default function MultiStoreProductCard({
           </div>
         )}
 
+        {/* Bottom-right, not top-right: the savings badge occupies top-left, and four
+            logos plus a "prihrani NN%" badge exceed the 216px inner card width, which
+            clipped the badge's percentage behind a logo. Moving the cluster down is
+            robust for any store count and any badge length, unlike shrinking max/size
+            which only raises the threshold at which it breaks again. */}
         <StoreLogos
           stores={stores}
           max={4}
           size="md"
-          className="absolute top-3 right-3"
+          className="absolute bottom-3 right-3"
         />
       </div>
 
