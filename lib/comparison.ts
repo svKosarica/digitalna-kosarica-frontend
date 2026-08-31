@@ -18,6 +18,11 @@ const PER_UNIT_SCALE: Partial<Record<BaseUnit, number>> = {
   piece: 1,
 };
 
+// Re-declared rather than imported from types/comparison.types.ts, which exports
+// the identical VALID_MULTI_STORE_SORTS. Importing that value would make this a
+// value import, and bare `node` cannot resolve the `@/` alias — the module would
+// stop being directly runnable, which is the whole verification story in the file
+// header above. Keep these four values in sync by hand; do not DRY them.
 const VALID_SORTS: MultiStoreSort[] = [
   "SAVINGS_PCT",
   "STORE_COUNT",
@@ -50,9 +55,12 @@ export function derivePricePerUnit(
   if (baseUnit == null) return null;
   const scale = PER_UNIT_SCALE[baseUnit];
   if (scale == null) return null;
-  // Guards against both null and the 0 that would yield Infinity, and against
-  // the negative quantities a bad parse can produce.
-  if (totalQuantity == null || totalQuantity <= 0) return null;
+  // !Number.isFinite covers Infinity as well as NaN: Infinity passes a bare `> 0`
+  // test, and price / Infinity is 0 — which would render "0,00 €/kg" as though the
+  // product were free, instead of hiding the per-unit line the way a missing
+  // quantity should.
+  if (totalQuantity == null || !Number.isFinite(totalQuantity) || totalQuantity <= 0)
+    return null;
   if (!Number.isFinite(price)) return null;
   return (price / totalQuantity) * scale;
 }
