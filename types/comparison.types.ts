@@ -1,6 +1,23 @@
 import type { BaseUnit, Product, Store } from "@/types/product.types";
 
 /**
+ * Wire types for the product-level endpoints — one article and what every store
+ * charges for it.
+ *
+ * Two fields reused from product.types.ts are typed non-nullable there but
+ * arrive null from THESE endpoints, and TypeScript will not warn you:
+ *
+ *   - `Product.brand` — guard every read as `product.brand?.name`.
+ *   - `Store.imageUrl` — never render a logo from it. Resolve the store through
+ *     normalizeStoreName() and read STORE_LOGOS instead, which is also how the
+ *     rest of the app draws store logos.
+ *
+ * `baseUnit` arrives as a bare string, so a sixth unit added backend-side reaches
+ * these types as an unknown value. formatSize/formatPricePerUnit already return
+ * null for one, which degrades to "no size shown" rather than a mislabelled one.
+ */
+
+/**
  * Ranking for GET /api/v1/products/multi-store.
  *
  * Each option carries its own fixed direction — the endpoint has no
