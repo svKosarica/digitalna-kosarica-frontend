@@ -44,9 +44,13 @@ export default function MultiStoreProductCardList({
             iconClassName="size-10"
           />
 
+          {/* Wording deliberately matches the grid card's "prihrani NN%" — do NOT
+              shorten this to "-NN%". That form already means "NN% off the old
+              price" everywhere else in this app (ProductCardList), and this
+              badge is a cross-store spread, not a discount. */}
           {savingsPct != null && savingsPct > 0 && (
-            <div className="absolute -top-1 -left-1 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-tight bg-primary text-primary-foreground">
-              -{Math.round(savingsPct)}%
+            <div className="absolute -top-1 -left-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold tracking-tight bg-primary text-primary-foreground">
+              prihrani {Math.round(savingsPct)}%
             </div>
           )}
 
