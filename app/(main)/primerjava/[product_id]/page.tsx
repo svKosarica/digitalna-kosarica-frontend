@@ -6,7 +6,7 @@ import { MultiStorePriceChart } from "@/components/shared/MultiStorePriceChart";
 import { ProductImage } from "@/components/shared/ProductImage";
 import { StoreListingRow } from "@/components/shared/StoreListingRow";
 import { StoreLogos } from "@/components/shared/StoreLogos";
-import { derivePricePerUnit } from "@/lib/comparison";
+import { derivePricePerUnit, STOCK_CHEAPEST_OUT } from "@/lib/comparison";
 import {
   formatEurAmount,
   formatPricePerUnit,
@@ -79,9 +79,16 @@ export default async function ProductComparisonPage({ params }: Props) {
     ? STORE_LOGOS[cheapestStoreName].label
     : undefined;
 
-  // Suppressed when every store charges the same: "prihranite do 0,00 €" is
-  // noise, and a spread of zero is a real and common case in this corpus.
+  // listings is cheapest-first, so listings[0] is the listing minPrice came from.
+  const cheapestUnavailable = listings.length > 0 && !listings[0].isAvailable;
+
+  // Suppressed when every store charges the same — "prihranite do 0,00 €" is noise —
+  // AND when the cheapest listing is unbuyable. The list card already hides its savings
+  // badge in that case; a hero that still promised the saving would contradict the very
+  // card the shopper clicked to get here. The price RANGE stays either way: it is a
+  // factual statement about published prices. Only the actionable claim goes.
   const hasSpread = savings > 0;
+  const canClaimSavings = hasSpread && !cheapestUnavailable;
 
   const productName = product.title || product.name;
 
@@ -152,10 +159,25 @@ export default async function ProductComparisonPage({ params }: Props) {
             {hasSpread && (
               <p className="text-xs sm:text-sm text-muted-foreground">
                 {storeCountLabel(storeCount)} · {formatEurAmount(minPrice)}–
-                {formatEurAmount(maxPrice)} &euro; · prihranite do{" "}
-                <span className="font-semibold text-foreground">
-                  {formatEurAmount(savings)} &euro;
-                </span>
+                {formatEurAmount(maxPrice)} &euro;
+                {canClaimSavings && (
+                  <>
+                    {" "}
+                    · prihranite do{" "}
+                    <span className="font-semibold text-foreground">
+                      {formatEurAmount(savings)} &euro;
+                    </span>
+                  </>
+                )}
+              </p>
+            )}
+
+            {cheapestUnavailable && (
+              <p className="flex items-start gap-2 text-xs sm:text-sm text-accent-foreground">
+                <Info className="size-4 shrink-0 mt-0.5" aria-hidden />
+                {/* The same words the list card uses, imported rather than retyped so
+                    the two surfaces cannot drift apart. */}
+                Najcenejša ponudba: {STOCK_CHEAPEST_OUT}.
               </p>
             )}
 
