@@ -4,18 +4,28 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "@/components/shared/ProductCard";
+import MultiStoreProductCard from "@/components/shared/MultiStoreProductCard";
+import { multiStoreCardProps } from "@/components/shared/MultiStoreResults";
 import { formatPricePerUnit, formatSize, pricePerUnitAriaLabel } from "@/lib/format";
 import { normalizeStoreName } from "@/lib/utils";
 import type { DiscountItem } from "@/types/product.types";
+import type { MultiStoreProduct } from "@/types/comparison.types";
 
 interface ProductScrollSectionProps {
   title: string;
   subtitle: string;
-  items: DiscountItem[];
+  /**
+   * Store listings — the original shape. Mutually exclusive with
+   * multiStoreItems: a rail shows one kind of card, because the two link into
+   * different id spaces and a mixed rail would be unreadable.
+   */
+  items?: DiscountItem[];
+  /** Multi-store groups. Rendered as MultiStoreProductCard, which has no "+". */
+  multiStoreItems?: MultiStoreProduct[];
   badgeVariant?: "discount" | "increase";
   /**
    * Full listing page for this section. Optional because not every section has
-   * one — "Največje podražitve" and "Sorodni izdelki" have no destination.
+   * one — "Sorodni izdelki" has no destination.
    */
   moreHref?: string;
 }
@@ -23,7 +33,8 @@ interface ProductScrollSectionProps {
 export default function ProductScrollSection({
   title,
   subtitle,
-  items,
+  items = [],
+  multiStoreItems = [],
   badgeVariant = "discount",
   moreHref,
 }: ProductScrollSectionProps) {
@@ -38,11 +49,16 @@ export default function ProductScrollSection({
     setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
   }, []);
 
+  // Nothing to show (e.g. a transient API outage) — hide the whole section
+  // rather than leave a stray header. This guard is why a failed multi-store
+  // fetch degrades to no rail instead of an empty one.
+  const count = items.length + multiStoreItems.length;
+
   useEffect(() => {
     updateScrollState();
     window.addEventListener("resize", updateScrollState);
     return () => window.removeEventListener("resize", updateScrollState);
-  }, [updateScrollState, items.length]);
+  }, [updateScrollState, count]);
 
   function scrollByViewport(direction: 1 | -1) {
     const el = scrollRef.current;
@@ -50,11 +66,7 @@ export default function ProductScrollSection({
     el.scrollBy({ left: direction * el.clientWidth * 0.9, behavior: "smooth" });
   }
 
-  const hasItems = items.length > 0;
-
-  // Nothing to show (e.g. endpoint not yet available or a transient API
-  // outage) — hide the whole section instead of leaving a stray header.
-  if (!hasItems) return null;
+  if (count === 0) return null;
 
   return (
     // The horizontal padding lives here, on the ancestor, rather than on the
@@ -142,6 +154,12 @@ export default function ProductScrollSection({
                   : []
               }
             />
+          </div>
+        ))}
+        {multiStoreItems.map((row) => (
+          // product.id, not storeProductId — see the id-space note in the spec.
+          <div key={row.product.id} className="shrink-0">
+            <MultiStoreProductCard {...multiStoreCardProps(row)} />
           </div>
         ))}
         {/* Breathing room after the last card at the end of the scroll. */}

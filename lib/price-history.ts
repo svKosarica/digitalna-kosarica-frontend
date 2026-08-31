@@ -1,4 +1,5 @@
 import type { PriceHistoryEntry } from "@/types/product.types";
+import type { ComparisonPricePoint } from "@/types/comparison.types";
 
 /**
  * Turns a product's price history into the points the chart draws.
@@ -102,4 +103,91 @@ export function buildPriceSeries(
   }
 
   return points;
+}
+
+/**
+ * Recharts dataKey for one listing's line. Prefixed because a bare numeric key
+ * is ambiguous against the `time` field.
+ */
+export function seriesKey(storeProductId: number): string {
+  return `s${storeProductId}`;
+}
+
+/** Companion key carrying that listing's cardDiscount flag at the same point. */
+export function cardKey(storeProductId: number): string {
+  return `s${storeProductId}__card`;
+}
+
+/**
+ * One row of the multi-series chart: a timestamp plus, for every listing, its
+ * price at that moment (or null before its first reading) and its
+ * card-discount flag.
+ */
+export interface MultiSeriesPoint {
+  time: number;
+  [key: string]: number | boolean | null;
+}
+
+/**
+ * Merges every listing's price history onto one shared time axis.
+ *
+ * Each listing goes through buildPriceSeries first, so it inherits the
+ * daily-collapse, the window anchor and the carry-forward-to-now that the
+ * single-store chart already relies on — including the reason the oldest
+ * reading is always kept. Only the merge is new.
+ *
+ * Between its own readings a series carries its last price forward, because
+ * the price WAS that value: a point exists at every timestamp where any
+ * listing changed, and leaving the others null there would break their lines
+ * wherever a competitor happened to move. Before a series' first reading it
+ * stays null — the store had published no price yet, and 0 would draw a line
+ * to the floor.
+ *
+ * A listing with an empty priceHistory contributes no key at all, so the chart
+ * simply draws no line for it rather than a flat zero.
+ *
+ * `now` is a parameter so the output is a function of its inputs alone.
+ */
+export function buildMultiStorePriceSeries(
+  listings: {
+    storeProductId: number;
+    priceHistory: ComparisonPricePoint[];
+  }[],
+  months: number | null,
+  now: Date = new Date(),
+): MultiSeriesPoint[] {
+  // ComparisonPricePoint is structurally a PriceHistoryEntry plus `anchor`, so
+  // it feeds buildPriceSeries directly. The anchor flag is not consulted here:
+  // a synthetic point draws exactly like a real one, and it is the CALLER's
+  // job never to count it as a price change.
+  const series = listings
+    .map((listing) => ({
+      key: seriesKey(listing.storeProductId),
+      card: cardKey(listing.storeProductId),
+      points: buildPriceSeries(listing.priceHistory, months, now),
+    }))
+    .filter((s) => s.points.length > 0);
+
+  if (series.length === 0) return [];
+
+  const times = [...new Set(series.flatMap((s) => s.points.map((p) => p.time)))].sort(
+    (a, b) => a - b,
+  );
+
+  return times.map((time) => {
+    const row: MultiSeriesPoint = { time };
+    for (const s of series) {
+      // The last point at or before `time` — the price that stood then. Linear
+      // scan per series per timestamp is fine: at most ~5 series x a few dozen
+      // price changes over a year.
+      let current: (typeof s.points)[number] | undefined;
+      for (const point of s.points) {
+        if (point.time > time) break;
+        current = point;
+      }
+      row[s.key] = current ? current.price : null;
+      row[s.card] = current ? current.cardDiscount : null;
+    }
+    return row;
+  });
 }
