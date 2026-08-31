@@ -35,7 +35,24 @@ export const VALID_MULTI_STORE_SORTS: MultiStoreSort[] = [
   "NAME",
 ];
 
-export const DEFAULT_MULTI_STORE_SORT: MultiStoreSort = "SAVINGS_PCT";
+/**
+ * The UI's default ranking.
+ *
+ * Deliberately NOT the API's own default of SAVINGS_PCT. Measured against live
+ * data, SAVINGS_PCT's first page is ~96% rows whose cheapest listing is out of
+ * stock — the widest spreads are artefacts of stale listings holding clearance
+ * prices — so the savings badge is correctly suppressed on almost every card and
+ * the page opens looking empty of value. STORE_COUNT opens on widely stocked,
+ * recognisable products with a real buyable spread. "Največji prihranek" remains
+ * the first option in the sort dropdown for anyone who wants the spread.
+ *
+ * Note this is the UI default only. buildMultiStoreQuery in lib/comparison.ts
+ * keeps its own "SAVINGS_PCT" fallback for invalid input, matching the API's
+ * default — and it CANNOT import this constant, because lib/comparison.ts is
+ * restricted to type-only imports so it stays runnable under bare `node`.
+ * Do not "align" them by adding a value import there.
+ */
+export const DEFAULT_MULTI_STORE_SORT: MultiStoreSort = "STORE_COUNT";
 
 /**
  * One row of the multi-store list.
