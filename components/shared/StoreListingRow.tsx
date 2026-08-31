@@ -11,11 +11,28 @@ import { STORE_LOGOS } from "@/lib/store";
 import { cn, normalizeStoreName } from "@/lib/utils";
 import type { ProductComparisonListing } from "@/types/comparison.types";
 
-/** A listing unseen this long gets a note; scrapes land daily. */
+/**
+ * A listing unseen this long gets a note; scrapes land daily.
+ *
+ * Must stay >= 5: staleNote hardcodes the CLDR "other" plural form "dnevi",
+ * which is correct for 5 and above. Lowering this below 5 requires the
+ * four-form treatment via Intl.PluralRules — see formatSize in lib/format.ts
+ * for the in-repo pattern.
+ */
 const STALE_DAYS = 7;
 
 export const OUT_OF_STOCK_CART_LABEL =
   "Ni na zalogi — dodajanje v košarico ni mogoče";
+
+/**
+ * Shown instead of OUT_OF_STOCK_CART_LABEL when the listing IS in stock but its
+ * store is not one this build knows. Reachable by design: store ids come from a
+ * database identity column, so a new retailer can reach the API before the
+ * frontend has its name and logo. Saying "ni na zalogi" there would state a
+ * false availability fact next to a row whose own chip reads "Na zalogi".
+ */
+export const UNKNOWN_STORE_CART_LABEL =
+  "Dodajanje iz te trgovine še ni mogoče";
 
 function staleNote(lastSeenAt: string | null): string | null {
   if (!lastSeenAt) return null;
@@ -76,6 +93,12 @@ export function StoreListingRow({
     listing.title && listing.title !== productName ? listing.title : null;
 
   const stale = staleNote(listing.lastSeenAt);
+
+  // Which failure the disabled button is reporting: out of stock, or a store
+  // this build cannot put in the basket. Never conflate them.
+  const disabledCartLabel = !listing.isAvailable
+    ? OUT_OF_STOCK_CART_LABEL
+    : UNKNOWN_STORE_CART_LABEL;
 
   return (
     <div
@@ -178,8 +201,8 @@ export function StoreListingRow({
             <button
               type="button"
               disabled
-              aria-label={OUT_OF_STOCK_CART_LABEL}
-              title={OUT_OF_STOCK_CART_LABEL}
+              aria-label={disabledCartLabel}
+              title={disabledCartLabel}
               className="inline-flex items-center justify-center gap-1.5 bg-border/40 text-muted-foreground px-4 sm:px-6 py-2.5 sm:py-3 rounded-full font-bold text-xs sm:text-sm whitespace-nowrap cursor-not-allowed"
             >
               V Košarico
