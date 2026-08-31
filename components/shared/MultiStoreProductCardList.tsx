@@ -96,6 +96,13 @@ export default function MultiStoreProductCardList({
               {pricePerUnit && (
                 <span aria-label={pricePerUnitAria}>{pricePerUnit}</span>
               )}
+              {/* Fallback when the cheapest store id isn't in STORE_MAP yet — a new
+                  retailer can reach the API before this build knows its name. Same
+                  locative wording as the grid card; storeCountLabel is nominative and
+                  wrong after "v". */}
+              {!cheapestStoreLabel && !pricePerUnit && (
+                <>v {storeCount === 1 ? "1 trgovini" : `${storeCount} trgovinah`}</>
+              )}
             </span>
             {stockNote && (
               <span className="text-[11px] font-semibold text-accent-foreground">
@@ -118,6 +125,13 @@ export default function MultiStoreProductCardList({
               {cheapestStoreLabel && pricePerUnit && " · "}
               {pricePerUnit && (
                 <span aria-label={pricePerUnitAria}>{pricePerUnit}</span>
+              )}
+              {/* Fallback when the cheapest store id isn't in STORE_MAP yet — a new
+                  retailer can reach the API before this build knows its name. Same
+                  locative wording as the grid card; storeCountLabel is nominative and
+                  wrong after "v". */}
+              {!cheapestStoreLabel && !pricePerUnit && (
+                <>v {storeCount === 1 ? "1 trgovini" : `${storeCount} trgovinah`}</>
               )}
             </span>
             {stockNote && (
