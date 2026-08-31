@@ -103,7 +103,13 @@ export const VALID_MULTI_STORE_SORTS: MultiStoreSort[] = [
   "NAME",
 ];
 
-export const DEFAULT_MULTI_STORE_SORT: MultiStoreSort = "SAVINGS_PCT";
+export const DEFAULT_MULTI_STORE_SORT: MultiStoreSort = "STORE_COUNT";
+// (Changed during implementation from "SAVINGS_PCT": measured on live data,
+// SAVINGS_PCT's first page is ~96% rows whose cheapest listing is out of
+// stock — the widest spreads are artefacts of stale listings holding
+// clearance prices — so the savings badge was correctly suppressed on almost
+// every card. STORE_COUNT opens on widely stocked products with real,
+// buyable spreads. "Največji prihranek" remains first in the sort dropdown.)
 
 /** One row of the multi-store list. Has NO pricePerUnit — see "Derived €/unit". */
 export interface MultiStoreProduct {
@@ -304,7 +310,7 @@ Search params on `/primerjava`, named to match `/search` so `Pagination` and
 |---|---|---|
 | `q` | free text | absent |
 | `categories` | comma-separated positive ints | absent |
-| `sort` | a `MultiStoreSort` | `SAVINGS_PCT` |
+| `sort` | a `MultiStoreSort` | `STORE_COUNT` (changed during implementation from `SAVINGS_PCT` — see the note by `DEFAULT_MULTI_STORE_SORT` above) |
 | `page` | zero-based int | `0` |
 | `view` | `grid` \| `list` \| absent | absent = CSS decides |
 
@@ -312,8 +318,9 @@ Validation mirrors `/search`: `categories` keeps only `Number.isInteger(n) && n 
 (which rejects `NaN`, `0`, `2.5` and `1e400`), `page` floors at 0, an unknown
 `sort` falls back to the default rather than reaching a `<Select>` as-is.
 
-`PAGE_SIZE = 50`, as on `/search`. At ~727 qualifying articles that is ~15
-pages.
+`PAGE_SIZE = 50`, as on `/search`. At 8238 qualifying articles that is 165
+pages. (Changed during implementation: the ~727 figure came from the backend
+doc's pre-Tuš snapshot; these are the measured live counts.)
 
 ## Components
 
@@ -356,7 +363,11 @@ layout. Whole card is a `<Link>` to `/primerjava/{product.id}`.
 
 ```
 ┌──────────────────────────────┐
-│ [prihrani 22%]   [logos +N] │   badge top-left, logos top-right
+│ [prihrani 22%]   [logos +N] │   badge top-left, logos bottom-right (changed
+│                              │   during implementation: with 4+ stores the
+│                              │   logo cluster overlapped and clipped the
+│                              │   savings badge, so the cluster moved below
+│                              │   the image)
 │                              │
 │          product image       │
 │                              │
@@ -453,8 +464,9 @@ Structurally a copy of `/search/page.tsx`, which already solves this shape:
   (`productCountLabel`), plus `v več trgovinah` so the number is not mistaken
   for the whole catalogue.
 
-Empty states matter more here than on `/search`, because the corpus is ~727
-articles and a category filter empties it often:
+Empty states matter more here than on `/search`, because the corpus is 8238
+articles (changed during implementation from the ~727 pre-Tuš figure) and a
+category filter empties it often:
 
 | Condition | Copy |
 |---|---|
@@ -588,7 +600,9 @@ the two id spaces on one page. Left for a follow-up.
 `app/(main)/page.tsx`:
 
 - `getHighestPriceIncrease()` drops out of the `Promise.all`;
-  `getMultiStoreProducts({ size: 20, sort: "SAVINGS_PCT" })` takes its place.
+  `getMultiStoreProducts({ size: 20, sort: "STORE_COUNT" })` takes its place
+  (changed during implementation from `"SAVINGS_PCT"`, for the same reason as
+  `DEFAULT_MULTI_STORE_SORT` above).
 - The third `ProductScrollSection` becomes:
 
 ```tsx
@@ -666,4 +680,4 @@ verification against the dev server.
 | A bad param returns 500 with no body | Every param clamped client-side before the fetch |
 | Corpus is small, so filters empty the page | Three specific empty states with a clear-filter link |
 | Chart unreadable with 5+ lines | Store colours matching logos, dashes for duplicates, toggleable legend |
-| Responses cached ~4h | No "live price" affordance anywhere; `lastSeenAt` note where a listing is stale |
+| Responses cached ~4h | No "live price" affordance anywhere; `lastSeenAt` is NOT a usable staleness signal on this API — the backend refreshes it on every scrape whether or not the listing is still real (across ~45 sampled listings the maximum age is 0 days), so a "note where a listing is stale" never renders (changed during implementation after the final review found this defect) |
