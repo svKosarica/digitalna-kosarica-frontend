@@ -4,6 +4,7 @@ import ProductScrollSection from "@/components/shared/ProductScrollSection";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { DEFAULT_MULTI_STORE_SORT } from "@/types/comparison.types";
 
 export default async function Page() {
   const [discounts, popular, multiStore] = await Promise.all([
@@ -12,8 +13,10 @@ export default async function Page() {
     // STORE_COUNT, not the widest-spread SAVINGS_PCT: the biggest spreads are
     // artefacts of stale out-of-stock listings, whose savings badge is correctly
     // suppressed — a savings rail that shows no savings. Widely-stocked products
-    // give a rail of real, buyable comparisons.
-    getMultiStoreProducts({ size: 20, sort: "STORE_COUNT" }),
+    // give a rail of real, buyable comparisons. Uses DEFAULT_MULTI_STORE_SORT
+    // rather than a literal, so the rail deliberately tracks the app default
+    // instead of pinning its own value that could silently drift from it.
+    getMultiStoreProducts({ size: 20, sort: DEFAULT_MULTI_STORE_SORT }),
   ]);
 
   return (
