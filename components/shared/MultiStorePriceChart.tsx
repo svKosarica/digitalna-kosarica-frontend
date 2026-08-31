@@ -285,7 +285,19 @@ function MultiStoreTooltip({ active, label, payload, series }: TooltipProps) {
     .map((entry) => {
       const match = series.find((s) => s.key === entry.dataKey);
       if (!match || typeof entry.value !== "number") return null;
-      return { label: match.label, color: match.color, value: entry.value };
+      // Carry the series key AND its card-flag key through. Re-resolving the
+      // series further down by `label` would be a string join with no
+      // uniqueness guarantee: two listings whose raw store.name strings match
+      // produce identical labels (occurrence is counted per storeId, so it does
+      // not separate them), and find() would return the first — attaching the
+      // card badge and the React key to the wrong listing.
+      return {
+        key: match.key,
+        cardFlagKey: match.cardFlagKey,
+        label: match.label,
+        color: match.color,
+        value: entry.value,
+      };
     })
     .filter((row): row is NonNullable<typeof row> => row !== null)
     .sort((a, b) => a.value - b.value);
@@ -301,10 +313,9 @@ function MultiStoreTooltip({ active, label, payload, series }: TooltipProps) {
       <p className="mb-1.5 font-semibold text-foreground">{formatDate(label)}</p>
       <div className="space-y-1">
         {rows.map((row) => {
-          const match = series.find((s) => s.label === row.label);
-          const carded = match ? flags[match.cardFlagKey] === true : false;
+          const carded = flags[row.cardFlagKey] === true;
           return (
-            <div key={row.label} className="flex items-center gap-2">
+            <div key={row.key} className="flex items-center gap-2">
               <span
                 aria-hidden
                 className="size-2 rounded-full shrink-0"
