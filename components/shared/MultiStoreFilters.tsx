@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LayoutGrid, List, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -75,19 +75,28 @@ export function MultiStoreFilters({ categories }: MultiStoreFiltersProps) {
   const viewParamRaw = searchParams.get("view");
   const view = viewParamRaw === "grid" || viewParamRaw === "list" ? viewParamRaw : null;
 
-  const [query, setQuery] = useState(searchParams.get("q") ?? "");
+  const urlQuery = searchParams.get("q") ?? "";
+  const [query, setQuery] = useState(urlQuery);
 
-  // Keeps the field honest when the URL changes from outside this component —
-  // a back/forward navigation, or the empty state's clear-filters link.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setQuery(searchParams.get("q") ?? "");
-  }, [searchParams]);
+  // Resyncs the field when the URL changes from OUTSIDE this component — a
+  // back/forward navigation, or the empty state's clear-filters link.
+  //
+  // Adjusted during render rather than in an effect. An effect would setState on
+  // every searchParams change, costing a cascading second render, which is what
+  // react-hooks/set-state-in-effect flags; this is React's documented
+  // alternative for resyncing state to an external value. Comparing the STRING,
+  // not the searchParams object, matters — that object can be a fresh instance
+  // each render and would loop.
+  const [syncedQuery, setSyncedQuery] = useState(urlQuery);
+  if (urlQuery !== syncedQuery) {
+    setSyncedQuery(urlQuery);
+    setQuery(urlQuery);
+  }
 
   /**
    * `resetPage` is false only for `view`, which re-renders from data already on
    * the page. Every other control changes which rows exist, so the offset is
-   * stale and must go — otherwise narrowing a 15-page result while on page 12
+   * stale and must go — otherwise narrowing a 165-page result while on page 120
    * lands on an empty page.
    */
   function commit(
