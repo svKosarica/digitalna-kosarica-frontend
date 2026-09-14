@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { searchProducts } from "@/actions/search.actions";
 import { getCategories } from "@/actions/category.actions";
 import ProductCard from "@/components/shared/ProductCard";
@@ -142,6 +143,27 @@ async function SearchResults({
 
 interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+/**
+ * Mirrors the <h1> the page renders, so a tab, a bookmark and a shared link all
+ * say which search they are. Reads only the URL — no fetch, so it adds no
+ * request to a route that already streams its results.
+ */
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const params = await searchParams;
+  const query = typeof params.q === "string" ? params.q.trim() : "";
+
+  return query
+    ? {
+        title: `Rezultati za \u201c${query}\u201d`,
+        description: `Cene za \u201c${query}\u201d v slovenskih trgovinah, primerjane na enem mestu.`,
+      }
+    : {
+        title: "Vsi izdelki",
+        description:
+          "Iščite in primerjajte cene izdelkov med slovenskimi trgovinami.",
+      };
 }
 
 export default async function SearchPage({ searchParams }: Props) {

@@ -22,7 +22,6 @@ interface ProductScrollSectionProps {
   items?: DiscountItem[];
   /** Multi-store groups. Rendered as MultiStoreProductCard, which has no "+". */
   multiStoreItems?: MultiStoreProduct[];
-  badgeVariant?: "discount" | "increase";
   /**
    * Full listing page for this section. Optional because not every section has
    * one — "Sorodni izdelki" has no destination.
@@ -35,7 +34,6 @@ export default function ProductScrollSection({
   subtitle,
   items = [],
   multiStoreItems = [],
-  badgeVariant = "discount",
   moreHref,
 }: ProductScrollSectionProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -148,7 +146,6 @@ export default function ProductScrollSection({
                   : undefined
               }
               discountPct={item.discountPct ?? undefined}
-              badgeVariant={badgeVariant}
               cardDiscount={item.cardDiscount}
               stores={
                 item.store?.name && normalizeStoreName(item.store.name)

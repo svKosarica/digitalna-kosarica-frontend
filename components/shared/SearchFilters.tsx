@@ -17,13 +17,14 @@ import type { Category, FilterOption } from "@/types/search.types";
 import { CategoryMultiSelect } from "@/components/shared/CategoryMultiSelect";
 import { StoreMultiSelect } from "@/components/shared/StoreMultiSelect";
 import { cn } from "@/lib/utils";
-
-// border-transparent in the base keeps the button from shifting 1px when the
-// active state adds its border.
-const TOGGLE_BASE =
-  "p-2 rounded-lg border border-transparent transition-colors cursor-pointer";
-const TOGGLE_ON = "bg-card text-primary border-primary/30";
-const TOGGLE_OFF = "text-muted-foreground/40 hover:text-primary";
+import {
+  FILTER_BAR,
+  TOGGLE_BASE,
+  TOGGLE_GRID_UNSET,
+  TOGGLE_LIST_UNSET,
+  TOGGLE_OFF,
+  TOGGLE_ON,
+} from "@/components/shared/viewToggleStyles";
 
 interface SearchFiltersProps {
   /** Flat list from GET /categories. Empty when the endpoint fails or returns 204. */
@@ -111,7 +112,7 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
   }
 
   return (
-    <div className="bg-secondary p-3 sm:p-4 rounded-xl border border-border/30">
+    <div className={FILTER_BAR}>
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
         <StoreMultiSelect
           selected={selectedStores}
@@ -235,10 +236,7 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
                 view === "list" && TOGGLE_OFF,
                 // Unchosen: inactive on phones, active from sm up — the
                 // breakpoint the results themselves switch at.
-                view === null && [
-                  TOGGLE_OFF,
-                  "sm:bg-card sm:text-primary sm:border-primary/30",
-                ],
+                view === null && TOGGLE_GRID_UNSET,
               )}
             >
               <LayoutGrid className="size-4 sm:size-5" />
@@ -252,10 +250,7 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
                 TOGGLE_BASE,
                 view === "list" && TOGGLE_ON,
                 view === "grid" && TOGGLE_OFF,
-                view === null && [
-                  TOGGLE_ON,
-                  "sm:bg-transparent sm:text-muted-foreground/40 sm:border-transparent sm:hover:text-primary",
-                ],
+                view === null && TOGGLE_LIST_UNSET,
               )}
             >
               <List className="size-4 sm:size-5" />

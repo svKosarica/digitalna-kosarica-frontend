@@ -7,7 +7,7 @@ import { ArrowDown, ArrowUp, Check } from "lucide-react";
 import { ProductImage } from "@/components/shared/ProductImage";
 import { CardDiscountMark } from "@/components/shared/CardDiscountMark";
 import { type StoreName, STORE_LOGOS } from "@/lib/store";
-import { formatEurAmount } from "@/lib/format";
+import { formatDiscountPct, formatEurAmount } from "@/lib/format";
 import { useCart } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 
@@ -107,9 +107,7 @@ export default function ProductCardList({
                   : "bg-primary text-primary-foreground"
               }`}
             >
-              {badgeVariant === "increase"
-                ? `+${Math.round(Math.abs(discountPct))}%`
-                : `-${discountPct}%`}
+              {formatDiscountPct(discountPct)}
             </div>
           )}
 

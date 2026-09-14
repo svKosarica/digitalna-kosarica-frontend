@@ -26,11 +26,6 @@ export default function MainLayout({
                 pravice pridržane.
               </p>
             </div>
-            <div className="flex space-x-6 text-xs uppercase tracking-wider font-semibold">
-              <a href="#" className="hover:text-primary transition-colors">
-                Kontakt
-              </a>
-            </div>
           </div>
         </footer>
       </div>
