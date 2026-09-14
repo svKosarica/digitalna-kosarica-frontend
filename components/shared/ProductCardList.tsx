@@ -9,6 +9,7 @@ import { CardDiscountMark } from "@/components/shared/CardDiscountMark";
 import { type StoreName, STORE_LOGOS } from "@/lib/store";
 import { formatEurAmount } from "@/lib/format";
 import { useCart } from "@/lib/cart";
+import { cn } from "@/lib/utils";
 
 interface ProductCardListProps {
   id: number;
@@ -145,9 +146,9 @@ export default function ProductCardList({
           </h4>
         </div>
 
-        {/* Stacked, not a justify-between row: with a wrapping row the button
-            only dropped below the price when an old price made the row wide
-            enough, so rows without one looked different. */}
+        {/* Price and its per-unit line, mobile only — the sm+ column below
+            renders its own. The add-to-cart that used to sit under these now
+            lives at the row's right edge. */}
         <div className="flex flex-col items-start gap-2 sm:hidden">
           <div className="flex flex-wrap items-baseline gap-1.5">
             <span className="text-lg font-bold text-foreground">
@@ -180,23 +181,21 @@ export default function ProductCardList({
               {pricePerUnit}
             </span>
           )}
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            disabled={added}
-            className={`inline-flex items-center gap-1 bg-primary text-primary-foreground py-1.5 px-3 rounded-xl font-bold text-xs transition-colors duration-200 ${
-              added ? "animate-button-pop cursor-default" : "hover:bg-primary/90 active:scale-95 cursor-pointer"
-            }`}
-          >
-            {added ? (
-              <>
-                <Check className="size-3.5" strokeWidth={3} /> Dodano
-              </>
-            ) : (
-              "V Košarico"
-            )}
-          </button>
         </div>
+      </div>
+
+      {/* Mobile add-to-cart. Pinned to the right edge of the row and centred
+          vertically rather than stacked under the price: it lands under the
+          thumb, and it no longer sits in the middle of the card where every
+          near-miss hits the card's own link instead. Above sm the button lives
+          in the right-hand column below, so this copy is hidden there. */}
+      <div className="sm:hidden shrink-0">
+        <CartButton
+          added={added}
+          onClick={handleAddToCart}
+          className="py-2.5 px-2.5 text-[11px]"
+          iconClassName="size-3.5"
+        />
       </div>
 
       <div className="hidden sm:flex flex-col items-end gap-3 shrink-0 min-w-[180px]">
@@ -260,25 +259,56 @@ export default function ProductCardList({
             </div>
           )}
 
-          <button
-            type="button"
+          <CartButton
+            added={added}
             onClick={handleAddToCart}
-            disabled={added}
-            className={`inline-flex items-center gap-1.5 bg-primary text-primary-foreground py-2 px-3 rounded-xl font-bold text-sm transition-colors duration-200 ${
-              added ? "animate-button-pop cursor-default" : "hover:bg-primary/90 active:scale-95 cursor-pointer"
-            }`}
-          >
-            {added ? (
-              <>
-                <Check className="size-4" strokeWidth={3} /> Dodano
-              </>
-            ) : (
-              "V Košarico"
-            )}
-          </button>
+            className="py-2 px-3 gap-1.5 text-sm"
+          />
         </div>
       </div>
     </div>
     </Link>
+  );
+}
+
+/**
+ * The card's add-to-cart control, in one place so the mobile and desktop
+ * copies cannot drift apart — they differ only in padding and type scale.
+ *
+ * The click handler stops the event: this renders inside the card's <Link>,
+ * and adding to the cart must not also navigate to the product.
+ */
+function CartButton({
+  added,
+  onClick,
+  className,
+  iconClassName,
+}: {
+  added: boolean;
+  onClick: (e: React.MouseEvent) => void;
+  className?: string;
+  iconClassName?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={added}
+      className={cn(
+        "inline-flex items-center justify-center gap-1 bg-primary text-primary-foreground rounded-xl font-bold whitespace-nowrap transition-colors duration-200",
+        added
+          ? "animate-button-pop cursor-default"
+          : "hover:bg-primary/90 active:scale-95 cursor-pointer",
+        className,
+      )}
+    >
+      {added ? (
+        <>
+          <Check className={cn("size-4", iconClassName)} strokeWidth={3} /> Dodano
+        </>
+      ) : (
+        "V Košarico"
+      )}
+    </button>
   );
 }

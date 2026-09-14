@@ -4,8 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CircleStar, TrendingDown } from "lucide-react";
+import { CartPopover } from "@/components/shared/CartPopover";
 import { SearchBar } from "@/components/shared/SearchBar";
-import { useCart } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 
 // p-2 around a 20px icon gives a 36px hit area without visually bulking the
@@ -14,7 +14,6 @@ const ICON_LINK =
   "inline-flex items-center justify-center p-2 rounded-full transition-colors active:scale-95";
 
 export function Header() {
-  const { totalItems, lastAddedAt } = useCart();
   const pathname = usePathname();
 
   return (
@@ -69,37 +68,17 @@ export function Header() {
           <CircleStar className="size-5" />
         </Link>
 
-        <Link
-          href="/basket"
-          aria-label="Košarica"
-          title="Košarica"
-          aria-current={pathname === "/basket" ? "page" : undefined}
+        {/* Opens a peek at the cart rather than navigating; "Poglej košarico"
+            inside it is the way to /basket. The chrome is passed down so this
+            button keeps matching the two nav icons beside it. */}
+        <CartPopover
           className={cn(
             ICON_LINK,
             pathname === "/basket"
               ? "text-primary bg-primary/10"
               : "text-muted-foreground hover:text-primary",
           )}
-        >
-          {/* key remounts on each add so the bump animation replays; the class is
-              only applied after the first add (lastAddedAt > 0). relative lives
-              here rather than on the Link so the badge pins to the icon and not
-              to the padded hit area. */}
-          <span
-            key={lastAddedAt}
-            className={cn(
-              "relative inline-block",
-              lastAddedAt > 0 && "animate-cart-bump",
-            )}
-          >
-            <Image src="/Icon.svg" alt="" width={20} height={20} />
-            {totalItems > 0 && (
-              <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1">
-                {totalItems > 99 ? "99+" : totalItems}
-              </span>
-            )}
-          </span>
-        </Link>
+        />
       </div>
     </header>
   );

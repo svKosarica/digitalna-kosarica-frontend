@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { STORE_MAP, VALID_FILTERS, VALID_SORTS } from "@/types/search.types";
-import type { Category, FilterOption, SortOption } from "@/types/search.types";
+import { resolveSort, STORE_MAP } from "@/types/search.types";
+import type { Category, FilterOption } from "@/types/search.types";
 import { CategoryMultiSelect } from "@/components/shared/CategoryMultiSelect";
 import { StoreMultiSelect } from "@/components/shared/StoreMultiSelect";
 import { cn } from "@/lib/utils";
@@ -25,15 +25,6 @@ const TOGGLE_BASE =
 const TOGGLE_ON = "bg-card text-primary border-primary/30";
 const TOGGLE_OFF = "text-muted-foreground/40 hover:text-primary";
 
-// sortOption NONE is not neutral server-side — filter=PRICE with sortOption=NONE
-// returns the most expensive rows first — so a field chosen while no direction
-// is set must be given one, or "Cena" would quietly mean "priciest first".
-const DEFAULT_ORDER: Record<Exclude<FilterOption, "NONE">, SortOption> = {
-  PRICE: "ASCENDING",
-  PRICE_PER_UNIT: "ASCENDING",
-  DISCOUNT_PCT: "DESCENDING",
-};
-
 interface SearchFiltersProps {
   /** Flat list from GET /categories. Empty when the endpoint fails or returns 204. */
   categories: Category[];
@@ -43,17 +34,14 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Validated, not just defaulted: ?filter=xyz used to reach the Select as-is
-  // and render a blank trigger.
-  const filterParam = searchParams.get("filter");
-  const filter: FilterOption = VALID_FILTERS.includes(filterParam as FilterOption)
-    ? (filterParam as FilterOption)
-    : "NONE";
-
-  const orderParam = searchParams.get("order");
-  const order: SortOption = VALID_SORTS.includes(orderParam as SortOption)
-    ? (orderParam as SortOption)
-    : "NONE";
+  // The same resolver the page runs, so the controls always describe the sort
+  // the results were actually fetched with — including the cheapest-first
+  // default an untouched search lands on. It also validates: ?filter=xyz used
+  // to reach the Select as-is and render a blank trigger.
+  const { filter, order } = resolveSort(
+    searchParams.get("filter"),
+    searchParams.get("order"),
+  );
 
   const storesParam = searchParams.get("stores");
   // Ids absent from STORE_MAP are dropped here, which also swallows the NaN
@@ -110,16 +98,16 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
 
   function handleFilterChange(val: string) {
     const next = val as FilterOption;
-    if (next === "NONE") {
-      // The API ignores sortOption without a field, and a stale value would
-      // leave a direction pill lit while both are disabled.
-      updateParams({ filter: "NONE", order: null });
-      return;
-    }
-    updateParams({
-      filter: next,
-      ...(order === "NONE" ? { order: DEFAULT_ORDER[next] } : {}),
-    });
+    // Clearing the field clears the direction with it: the API ignores
+    // sortOption without a field, and a stale value would leave a direction
+    // pill lit while both are disabled.
+    //
+    // Picking a field writes only the field. A direction the visitor chose is
+    // already in the URL and carries over; if none is, resolveSort supplies
+    // that field's default — which is why this no longer sets one itself.
+    updateParams(
+      next === "NONE" ? { filter: "NONE", order: null } : { filter: next },
+    );
   }
 
   return (

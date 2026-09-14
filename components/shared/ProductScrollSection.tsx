@@ -78,7 +78,9 @@ export default function ProductScrollSection({
       <div className="pt-8 flex items-end justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <h2 className="text-2xl sm:text-[30px] font-semibold text-foreground">
+            {/* font-bold, matching the section headings on the product detail
+                page — the rails and those headings read as one set. */}
+            <h2 className="text-2xl sm:text-[30px] font-bold text-foreground">
               {title}
             </h2>
             {/* Beside the title rather than in the arrow group, which is hidden
