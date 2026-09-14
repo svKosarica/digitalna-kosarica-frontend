@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Minus, Plus, ShoppingCart, X } from "lucide-react";
+import { Minus, Plus, ShoppingCart, Trash2, X } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -157,6 +157,7 @@ function CartPopoverRow({
   onUpdateQuantity: (id: number, qty: number) => void;
 }) {
   const storeLogo = STORE_LOGOS[item.storeName];
+  const isLastUnit = item.quantity <= 1;
 
   return (
     <li className="flex items-center gap-3 px-4 py-3">
@@ -191,19 +192,27 @@ function CartPopoverRow({
       </div>
 
       {/* Stepping below 1 drops the line: updateQuantity treats qty <= 0 as a
-          removal, which is what the basket page's stepper relies on too. */}
+          removal, which is what the basket page's stepper relies on too. The
+          trash icon at one unit says so before the click. */}
       <div className="flex items-center bg-secondary rounded-full shrink-0">
         <button
           type="button"
           onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
           aria-label={
-            item.quantity <= 1
+            isLastUnit
               ? `Odstrani ${item.productName}`
               : `Zmanjšaj količino: ${item.productName}`
           }
-          className="p-1.5 hover:text-primary transition-colors cursor-pointer"
+          className={cn(
+            "p-1.5 transition-colors cursor-pointer",
+            isLastUnit ? "hover:text-destructive" : "hover:text-primary",
+          )}
         >
-          <Minus className="size-3.5" />
+          {isLastUnit ? (
+            <Trash2 className="size-3.5" aria-hidden />
+          ) : (
+            <Minus className="size-3.5" aria-hidden />
+          )}
         </button>
         <span className="min-w-[20px] text-center font-bold text-foreground text-xs">
           {item.quantity}

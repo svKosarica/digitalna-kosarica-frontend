@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import { ProductImage } from "@/components/shared/ProductImage";
 import { CardDiscountMark } from "@/components/shared/CardDiscountMark";
 import { type CartItem } from "@/lib/cart";
@@ -22,6 +22,9 @@ export function BasketItemCard({
 }: BasketItemCardProps) {
   const storeLogo = STORE_LOGOS[item.storeName];
   const lineTotal = item.price * item.quantity;
+  // At one unit the decrement button removes the line, so it shows a trash
+  // icon instead of a minus — the same swap the header popover's stepper makes.
+  const isLastUnit = item.quantity <= 1;
 
   return (
     <div className="bg-card rounded-xl p-3 sm:p-4 border border-border/10 transition-all hover:border-border/30">
@@ -99,20 +102,26 @@ export function BasketItemCard({
               <button
                 type="button"
                 onClick={() =>
-                  item.quantity <= 1
+                  isLastUnit
                     ? onRemove(item.id)
                     : onUpdateQuantity(item.id, item.quantity - 1)
                 }
                 // Names the two different things this one button does, the way
                 // the header popover's stepper already does.
                 aria-label={
-                  item.quantity <= 1
+                  isLastUnit
                     ? `Odstrani ${item.productName}`
                     : `Zmanjšaj količino: ${item.productName}`
                 }
-                className="p-1.5 sm:p-2 hover:text-primary transition-colors cursor-pointer"
+                className={`p-1.5 sm:p-2 transition-colors cursor-pointer ${
+                  isLastUnit ? "hover:text-destructive" : "hover:text-primary"
+                }`}
               >
-                <Minus className="size-3.5 sm:size-4" aria-hidden />
+                {isLastUnit ? (
+                  <Trash2 className="size-3.5 sm:size-4" aria-hidden />
+                ) : (
+                  <Minus className="size-3.5 sm:size-4" aria-hidden />
+                )}
               </button>
               <span className="min-w-[24px] sm:min-w-[28px] text-center font-bold text-foreground text-xs sm:text-sm">
                 {item.quantity}
