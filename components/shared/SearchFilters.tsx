@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
-import { LayoutGrid, List } from "lucide-react";
+import { ArrowDown, ArrowUp, LayoutGrid, List } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -171,13 +171,17 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
 
         <div className="h-px w-full bg-border/30 sm:h-8 sm:w-px sm:bg-border/40" />
 
-        {/* Sort row */}
-        <div className="flex items-center gap-2">
+        {/* Sort row.
+            min-w-0 on the row and on the Select is what keeps this inside the
+            toolbar on a narrow phone: without it the Select's intrinsic width
+            plus the direction and view controls overflowed the rounded
+            background, pushing the grid/list icons outside it. */}
+        <div className="flex items-center gap-2 min-w-0">
           <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground/60 hidden sm:inline">
             Razvrsti
           </span>
           <Select value={filter} onValueChange={handleFilterChange}>
-            <SelectTrigger className="flex-1 sm:flex-none sm:w-[170px] bg-card border-border text-foreground font-bold text-sm">
+            <SelectTrigger className="flex-1 min-w-0 sm:flex-none sm:w-[170px] bg-card border-border text-foreground font-bold text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent position="popper" sideOffset={4} className="bg-card border-border">
@@ -188,7 +192,11 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
             </SelectContent>
           </Select>
 
-          <div className="flex items-center gap-0.5 bg-card p-1 rounded-lg border border-border">
+          {/* Arrows rather than "Naraš."/"Pad.": the two text labels cost about
+              120px, which is what pushed the view toggle out of the toolbar on a
+              phone. An arrow carries the same meaning in ~28px. aria-label and
+              title keep the wording available to screen readers and on hover. */}
+          <div className="flex items-center gap-0.5 bg-card p-1 rounded-lg border border-border shrink-0">
             {/* Inert while nothing is sorted: the API ignores sortOption without
                 a field, and a live-looking button that does nothing is worse
                 than a visibly disabled one. */}
@@ -196,32 +204,38 @@ export function SearchFilters({ categories }: SearchFiltersProps) {
               type="button"
               disabled={filter === "NONE"}
               onClick={() => updateParam("order", "ASCENDING")}
+              aria-label="Naraščajoče"
+              title="Naraščajoče"
               className={cn(
-                "px-3 py-1 text-xs font-bold rounded-md transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none",
+                "p-1.5 rounded-md transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none",
                 order === "ASCENDING"
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-secondary",
               )}
             >
-              Naraš.
+              <ArrowUp className="size-4" />
             </button>
             <button
               type="button"
               disabled={filter === "NONE"}
               onClick={() => updateParam("order", "DESCENDING")}
+              aria-label="Padajoče"
+              title="Padajoče"
               className={cn(
-                "px-3 py-1 text-xs font-bold rounded-md transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none",
+                "p-1.5 rounded-md transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none",
                 order === "DESCENDING"
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-secondary",
               )}
             >
-              Pad.
+              <ArrowDown className="size-4" />
             </button>
           </div>
 
-          {/* View toggle — pushed right, inline with sort on mobile */}
-          <div className="ml-auto flex items-center gap-1">
+          {/* View toggle — pushed right, inline with sort on mobile.
+              shrink-0 so it keeps its full width and the Select gives way
+              instead; it is the element that was being forced outside. */}
+          <div className="ml-auto flex items-center gap-1 shrink-0">
             <button
               type="button"
               onClick={() => updateParam("view", "grid")}

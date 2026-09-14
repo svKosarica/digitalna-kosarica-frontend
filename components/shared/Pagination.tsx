@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,7 @@ function getPageNumbers(current: number, total: number): (number | "ellipsis")[]
 export function Pagination({ currentPage, totalPages }: PaginationProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   const goToPage = useCallback(
     (page: number) => {
@@ -49,9 +50,12 @@ export function Pagination({ currentPage, totalPages }: PaginationProps) {
       } else {
         params.set("page", String(page));
       }
-      router.replace(`/search?${params.toString()}`);
+      // The current route, not a literal: this component is mounted on /search
+      // AND on /primerjava, and hardcoding one of them sends the other's readers
+      // to a different page's results while still looking like it worked.
+      router.replace(`${pathname}?${params.toString()}`);
     },
-    [router, searchParams],
+    [router, searchParams, pathname],
   );
 
   if (totalPages <= 1) return null;
