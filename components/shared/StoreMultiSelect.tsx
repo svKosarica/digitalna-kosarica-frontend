@@ -7,7 +7,7 @@ import {
 } from "@/components/shared/FilterPopover";
 import { STORE_LOGOS } from "@/lib/store";
 import { storeCountLabel } from "@/lib/utils";
-import { STORE_MAP } from "@/types/search.types";
+import { ALL_STORES_LABEL, STORE_MAP } from "@/types/search.types";
 
 const ALL_STORE_IDS = Object.keys(STORE_MAP).map(Number);
 
@@ -17,56 +17,61 @@ interface StoreMultiSelectProps {
    * every store, which is how the absent param is spelled.
    */
   selected: number[];
-  /** Called on close with a canonical list. Empty means "drop the param". */
+  /** Called on close with a sorted list. Empty means "drop the param". */
   onCommit: (ids: number[]) => void;
 }
 
-/**
- * "Everything selected" has two spellings — an empty list and the full list —
- * so both sides of every comparison go through this. The URL uses the empty
- * form; the draft uses the full one, because that is what lets the first
- * uncheck mean "all except this".
- */
-function canonical(ids: number[]): number[] {
-  if (ids.length === 0 || ids.length === ALL_STORE_IDS.length) return [];
+function sorted(ids: number[]): number[] {
   return [...ids].sort((a, b) => a - b);
 }
 
+/**
+ * Store filter over a flat list, where checking a row means "include this one".
+ *
+ * Additive, like CategoryMultiSelect: an empty draft means every store, and the
+ * draft holds ids in the exact form they go on the wire. That is the same
+ * spelling the URL param and the API already use — storeIds: [] is read as
+ * "every store" — so no state here needs translating on the way out, and the
+ * two filters in the toolbar answer a click the same way.
+ *
+ * The cost is that excluding a single store means checking the other four. The
+ * subtractive alternative bought that one gesture at the price of a draft whose
+ * "all" was spelled differently from the URL's, and of unchecking the last box
+ * silently re-selecting every store — zero stores being a state the API cannot
+ * express.
+ */
 export function StoreMultiSelect({ selected, onCommit }: StoreMultiSelectProps) {
-  const [draft, setDraft] = useState<number[]>(
-    selected.length ? selected : ALL_STORE_IDS,
-  );
+  const [draft, setDraft] = useState<number[]>(selected);
 
   function handleOpenChange(open: boolean) {
     if (open) {
       // Opening is the sync point, so no effect has to watch the param and a
       // filter reset from a new search cannot leave a stale draft behind.
-      setDraft(selected.length ? selected : ALL_STORE_IDS);
+      setDraft(selected);
       return;
     }
     // One navigation per session of edits, not one per checkbox.
-    if (canonical(selected).join(",") !== canonical(draft).join(",")) {
-      onCommit(canonical(draft));
+    if (sorted(selected).join(",") !== sorted(draft).join(",")) {
+      onCommit(sorted(draft));
     }
   }
 
   function toggle(id: number) {
-    setDraft((current) => {
-      if (!current.includes(id)) return [...current, id];
-      const next = current.filter((storeId) => storeId !== id);
-      // Zero stores is not a state the UI can mean: the API reads storeIds: []
-      // as "every store", so unchecking the last box would show more, not less.
-      return next.length ? next : ALL_STORE_IDS;
-    });
+    // Reads `current` rather than the render-time draft so two toggles batched
+    // into one commit cannot have the second discard the first.
+    setDraft((current) =>
+      current.includes(id)
+        ? current.filter((storeId) => storeId !== id)
+        : [...current, id],
+    );
   }
 
-  const allSelected = draft.length === ALL_STORE_IDS.length;
-
-  const label = allSelected
-    ? "Vse trgovine"
-    : draft.length === 1
-      ? STORE_LOGOS[STORE_MAP[draft[0]]].label
-      : storeCountLabel(draft.length);
+  const label =
+    draft.length === 0
+      ? ALL_STORES_LABEL
+      : draft.length === 1
+        ? STORE_LOGOS[STORE_MAP[draft[0]]].label
+        : storeCountLabel(draft.length);
 
   return (
     <FilterPopover
@@ -76,9 +81,9 @@ export function StoreMultiSelect({ selected, onCommit }: StoreMultiSelectProps) 
       header={
         <FilterCheckboxRow
           id="store-all"
-          checked={allSelected}
-          onToggle={() => setDraft(ALL_STORE_IDS)}
-          label="Vse trgovine"
+          checked={draft.length === 0}
+          onToggle={() => setDraft([])}
+          label={ALL_STORES_LABEL}
         />
       }
     >
