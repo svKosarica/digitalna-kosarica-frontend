@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
+import { CreditCard } from "lucide-react";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
@@ -322,12 +323,20 @@ function MultiStoreTooltip({ active, label, payload, series }: TooltipProps) {
                 style={{ backgroundColor: row.color }}
               />
               <span className="text-muted-foreground">{row.label}</span>
-              <span className="ml-auto font-medium text-foreground">
+              {/* The card mark sits in a slot that is reserved on every row,
+                  carded or not, so the prices stay on one column. */}
+              <span className="ml-auto flex size-3.5 shrink-0 items-center justify-center text-primary">
+                {carded && (
+                  <CreditCard
+                    className="size-3.5"
+                    role="img"
+                    aria-label={CARD_DISCOUNT_CHART_NOTE}
+                  />
+                )}
+              </span>
+              <span className="font-medium tabular-nums text-foreground">
                 {formatEurAmount(row.value)} €
               </span>
-              {carded && (
-                <span className="text-primary">{CARD_DISCOUNT_CHART_NOTE}</span>
-              )}
             </div>
           );
         })}

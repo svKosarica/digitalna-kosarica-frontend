@@ -4,7 +4,6 @@ import { DiscountItem, DiscountWindow } from "@/types/product.types";
 
 const NO_DISCOUNTS: DiscountItem[] = [];
 const NO_POPULAR: DiscountItem[] = [];
-const NO_INCREASES: DiscountItem[] = [];
 
 /**
  * These endpoints answer 204 No Content — not 200 [] — when they have nothing
@@ -72,29 +71,5 @@ export async function getMostPopular(
   } catch (error) {
     console.error("Most popular request failed:", error);
     return NO_POPULAR;
-  }
-}
-
-export async function getHighestPriceIncrease(
-  limit: number = 20
-): Promise<DiscountItem[]> {
-  try {
-    const res = await fetch(
-      `${process.env.API_URL}/store/products/highest-price-increase?limit=${limit}`,
-      { cache: "no-store" }
-    );
-
-    if (!res.ok) {
-      console.error(
-        `Price increase API error: ${res.status} ${res.statusText} (limit ${limit})`
-      );
-      return NO_INCREASES;
-    }
-
-    // Awaited so a malformed body rejects inside the catch, not after returning.
-    return (await parseItems(res)) ?? NO_INCREASES;
-  } catch (error) {
-    console.error("Price increase request failed:", error);
-    return NO_INCREASES;
   }
 }

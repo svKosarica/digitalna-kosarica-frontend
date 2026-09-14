@@ -65,11 +65,18 @@ export function Pagination({ currentPage, totalPages }: PaginationProps) {
   const pages = getPageNumbers(currentPage, totalPages);
 
   return (
-    <div className="mt-12 flex items-center justify-center gap-2">
+    // A nav landmark, not a bare div: this is a second navigation region on the
+    // page, and a screen-reader user needs to be able to jump to it.
+    <nav
+      aria-label="Strani rezultatov"
+      className="mt-12 flex items-center justify-center gap-2"
+    >
       <button
         type="button"
         disabled={!hasPrev}
         onClick={() => goToPage(currentPage - 1)}
+        aria-label="Prejšnja stran"
+        title="Prejšnja stran"
         className={cn(
           "w-10 h-10 flex items-center justify-center rounded-full transition-colors cursor-pointer",
           hasPrev
@@ -82,7 +89,11 @@ export function Pagination({ currentPage, totalPages }: PaginationProps) {
 
       {pages.map((item, idx) =>
         item === "ellipsis" ? (
-          <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground/40 font-bold">
+          <span
+            key={`ellipsis-${idx}`}
+            aria-hidden
+            className="px-2 text-muted-foreground/40 font-bold"
+          >
             ...
           </span>
         ) : (
@@ -90,6 +101,8 @@ export function Pagination({ currentPage, totalPages }: PaginationProps) {
             key={item}
             type="button"
             onClick={() => goToPage(item)}
+            aria-label={`Stran ${item + 1}`}
+            aria-current={item === currentPage ? "page" : undefined}
             className={cn(
               "w-10 h-10 flex items-center justify-center rounded-full font-bold transition-colors cursor-pointer",
               item === currentPage
@@ -106,6 +119,8 @@ export function Pagination({ currentPage, totalPages }: PaginationProps) {
         type="button"
         disabled={!hasNext}
         onClick={() => goToPage(currentPage + 1)}
+        aria-label="Naslednja stran"
+        title="Naslednja stran"
         className={cn(
           "w-10 h-10 flex items-center justify-center rounded-full transition-colors cursor-pointer",
           hasNext
@@ -115,6 +130,6 @@ export function Pagination({ currentPage, totalPages }: PaginationProps) {
       >
         <ChevronRight className="size-5" />
       </button>
-    </div>
+    </nav>
   );
 }

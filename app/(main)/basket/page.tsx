@@ -2,40 +2,18 @@
 
 import { useMemo } from "react";
 import Image from "next/image";
-import { ShoppingCart, Trash2, Download, CreditCard } from "lucide-react";
+import { ShoppingCart, Trash2, Printer, CreditCard } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { formatEurAmount } from "@/lib/format";
-import { STORE_LOGOS, type StoreName } from "@/lib/store";
+import { groupItemsByStore, printShoppingList } from "@/lib/shopping-list";
+import { STORE_LOGOS } from "@/lib/store";
 import { BasketItemCard } from "@/components/shared/BasketItemCard";
 import { CARD_DISCOUNT_TOTAL_NOTE } from "@/components/shared/CardDiscountMark";
-
-function exportCSV(items: { productName: string; storeName: string; price: number; quantity: number }[]) {
-  const header = "Izdelek,Trgovina,Cena,Količina,Skupaj";
-  const rows = items.map(
-    (i) => `"${i.productName}","${i.storeName}",${i.price.toFixed(2)},${i.quantity},${(i.price * i.quantity).toFixed(2)}`,
-  );
-  const csv = [header, ...rows].join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "kosarca.csv";
-  a.click();
-  URL.revokeObjectURL(url);
-}
 
 export default function BasketPage() {
   const { items, updateQuantity, removeItem, clearCart } = useCart();
 
-  const storeTotals = useMemo(() => {
-    const map = new Map<StoreName, number>();
-    for (const item of items) {
-      map.set(item.storeName, (map.get(item.storeName) ?? 0) + item.price * item.quantity);
-    }
-    return Array.from(map.entries())
-      .map(([name, total]) => ({ name, total }))
-      .sort((a, b) => a.total - b.total);
-  }, [items]);
+  const storeGroups = useMemo(() => groupItemsByStore(items), [items]);
 
   const grandTotal = useMemo(
     () => items.reduce((sum, i) => sum + i.price * i.quantity, 0),
@@ -80,21 +58,12 @@ export default function BasketPage() {
           </button>
           <button
             type="button"
-            onClick={() =>
-              exportCSV(
-                items.map((i) => ({
-                  productName: i.productName,
-                  storeName: STORE_LOGOS[i.storeName]?.label ?? i.storeName,
-                  price: i.price,
-                  quantity: i.quantity,
-                })),
-              )
-            }
+            onClick={() => printShoppingList(items)}
             className="flex flex-1 md:flex-none items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-xs sm:text-sm hover:bg-primary/90 transition-all active:scale-95 cursor-pointer"
           >
-            <Download className="size-4" />
-            <span className="hidden sm:inline">Izvozi seznam</span>
-            <span className="sm:hidden">Izvozi</span>
+            <Printer className="size-4" />
+            <span className="hidden sm:inline">Natisni seznam</span>
+            <span className="sm:hidden">Natisni</span>
           </button>
         </div>
       </div>
@@ -106,11 +75,11 @@ export default function BasketPage() {
               Skupna cena po trgovinah
             </h2>
             <div className="space-y-4">
-              {storeTotals.map(({ name, total }) => {
-                const logo = STORE_LOGOS[name];
+              {storeGroups.map(({ store, label, total }) => {
+                const logo = STORE_LOGOS[store];
                 return (
                   <div
-                    key={name}
+                    key={store}
                     className="flex items-center justify-between p-4 rounded-xl bg-card shadow-sm border border-transparent"
                   >
                     <div className="flex items-center gap-3">
@@ -125,7 +94,7 @@ export default function BasketPage() {
                           />
                         </div>
                       )}
-                      <span className="font-bold text-foreground">{logo?.label ?? name}</span>
+                      <span className="font-bold text-foreground">{label}</span>
                     </div>
                     <span className="text-xl font-extrabold text-foreground">
                       {formatEurAmount(total)} &euro;

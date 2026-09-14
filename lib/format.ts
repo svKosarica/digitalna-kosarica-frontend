@@ -141,3 +141,20 @@ export function pricePerUnitAriaLabel(
   if (!spoken) return null;
   return `${spoken}: ${formatEurAmount(pricePerUnit)} €`;
 }
+
+/**
+ * "-51%", "+12%" — a discount or price-increase badge.
+ *
+ * Rounded, always. `discountPct` arrives as a raw percentage with wire
+ * precision, so a listing at 50.17% off rendered as "-50.17%" on a card while
+ * the very same listing read "-50%" on the comparison page, which rounded it
+ * inline. A badge is a glance, not a figure to reconcile, and two decimals in a
+ * 40px pill is noise the shopper cannot act on.
+ *
+ * The sign is derived, not passed: the API sends a NEGATIVE discountPct when
+ * the price rose, and every call site was independently re-deriving that.
+ */
+export function formatDiscountPct(discountPct: number): string {
+  const rounded = Math.round(Math.abs(discountPct));
+  return discountPct < 0 ? `+${rounded}%` : `-${rounded}%`;
+}
