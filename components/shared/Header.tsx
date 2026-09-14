@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CircleStar, TrendingDown } from "lucide-react";
+import { CircleStar, Scale, TrendingDown } from "lucide-react";
 import { CartPopover } from "@/components/shared/CartPopover";
 import { SearchBar } from "@/components/shared/SearchBar";
 import { cn } from "@/lib/utils";
@@ -66,6 +66,21 @@ export function Header() {
           )}
         >
           <CircleStar className="size-5" />
+        </Link>
+
+        <Link
+          href="/primerjava"
+          aria-label="Isti izdelek, več cen"
+          title="Isti izdelek, več cen"
+          aria-current={pathname === "/primerjava" ? "page" : undefined}
+          className={cn(
+            ICON_LINK,
+            pathname === "/primerjava"
+              ? "text-primary bg-primary/10"
+              : "text-muted-foreground hover:text-primary",
+          )}
+        >
+          <Scale className="size-5" />
         </Link>
 
         {/* Opens a peek at the cart rather than navigating; "Poglej košarico"

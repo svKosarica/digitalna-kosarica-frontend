@@ -6,7 +6,7 @@ import { Minus, Plus } from "lucide-react";
 import { ProductImage } from "@/components/shared/ProductImage";
 import { CardDiscountMark } from "@/components/shared/CardDiscountMark";
 import { type CartItem } from "@/lib/cart";
-import { formatEurAmount } from "@/lib/format";
+import { formatDiscountPct, formatEurAmount } from "@/lib/format";
 import { STORE_LOGOS } from "@/lib/store";
 
 interface BasketItemCardProps {
@@ -40,7 +40,7 @@ export function BasketItemCard({
           />
           {item.discountPct != null && item.discountPct > 0 && (
             <div className="absolute -top-1.5 -left-1.5 z-10 px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[8px] font-bold leading-none">
-              -{item.discountPct}%
+              {formatDiscountPct(item.discountPct)}
             </div>
           )}
           {storeLogo && (
@@ -103,9 +103,16 @@ export function BasketItemCard({
                     ? onRemove(item.id)
                     : onUpdateQuantity(item.id, item.quantity - 1)
                 }
+                // Names the two different things this one button does, the way
+                // the header popover's stepper already does.
+                aria-label={
+                  item.quantity <= 1
+                    ? `Odstrani ${item.productName}`
+                    : `Zmanjšaj količino: ${item.productName}`
+                }
                 className="p-1.5 sm:p-2 hover:text-primary transition-colors cursor-pointer"
               >
-                <Minus className="size-3.5 sm:size-4" />
+                <Minus className="size-3.5 sm:size-4" aria-hidden />
               </button>
               <span className="min-w-[24px] sm:min-w-[28px] text-center font-bold text-foreground text-xs sm:text-sm">
                 {item.quantity}
@@ -113,9 +120,10 @@ export function BasketItemCard({
               <button
                 type="button"
                 onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                aria-label={`Povečaj količino: ${item.productName}`}
                 className="p-1.5 sm:p-2 hover:text-primary transition-colors cursor-pointer"
               >
-                <Plus className="size-3.5 sm:size-4" />
+                <Plus className="size-3.5 sm:size-4" aria-hidden />
               </button>
             </div>
           </div>

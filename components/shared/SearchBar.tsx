@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
@@ -9,13 +9,22 @@ export function SearchBar() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [query, setQuery] = useState(searchParams.get("q") ?? "");
 
-  useEffect(() => {
-    if (pathname !== "/search") {
-      setQuery("");
-    }
-  }, [pathname]);
+  // Off /search the field is empty; on it, it shows that page's term.
+  const urlQuery = pathname === "/search" ? (searchParams.get("q") ?? "") : "";
+  const [query, setQuery] = useState(urlQuery);
+
+  // Adjusted during render rather than in an effect — the same resync pattern
+  // MultiStoreFilters uses and documents. An effect setState here cost a
+  // cascading second render on every navigation and tripped
+  // react-hooks/set-state-in-effect. Comparing the STRING, not the
+  // searchParams object, matters: that object can be a fresh instance each
+  // render and would loop.
+  const [syncedQuery, setSyncedQuery] = useState(urlQuery);
+  if (urlQuery !== syncedQuery) {
+    setSyncedQuery(urlQuery);
+    setQuery(urlQuery);
+  }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key !== "Enter" || !query.trim()) return;
@@ -48,7 +57,7 @@ export function SearchBar() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={handleKeyDown}
-        className="pl-9 bg-white dark:bg-white border-2 border-primary/30 rounded-full shadow-sm text-base placeholder:text-muted-foreground/50 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
+        className="pl-9 bg-card border-2 border-primary/30 rounded-full shadow-sm text-base placeholder:text-muted-foreground/50 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
       />
     </div>
   );

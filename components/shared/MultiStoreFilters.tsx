@@ -14,18 +14,19 @@ import {
 import { CategoryMultiSelect } from "@/components/shared/CategoryMultiSelect";
 import { cn } from "@/lib/utils";
 import {
+  FILTER_BAR,
+  TOGGLE_BASE,
+  TOGGLE_GRID_UNSET,
+  TOGGLE_LIST_UNSET,
+  TOGGLE_OFF,
+  TOGGLE_ON,
+} from "@/components/shared/viewToggleStyles";
+import {
   DEFAULT_MULTI_STORE_SORT,
   VALID_MULTI_STORE_SORTS,
   type MultiStoreSort,
 } from "@/types/comparison.types";
 import type { Category } from "@/types/search.types";
-
-// Same classes SearchFilters uses; border-transparent in the base keeps the
-// button from shifting 1px when the active state adds its border.
-const TOGGLE_BASE =
-  "p-2 rounded-lg border border-transparent transition-colors cursor-pointer";
-const TOGGLE_ON = "bg-card text-primary border-primary/30";
-const TOGGLE_OFF = "text-muted-foreground/40 hover:text-primary";
 
 /**
  * Benefit-led labels, not field names: each sort has ONE baked-in direction, so
@@ -139,9 +140,12 @@ export function MultiStoreFilters({ categories }: MultiStoreFiltersProps) {
         />
       </div>
 
-      <div className="bg-secondary p-4 rounded-xl border border-border/30">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-4">
+      <div className={FILTER_BAR}>
+        {/* Stacks on a phone and only goes to a row from sm up — the same
+            treatment SearchFilters has. Side by side at 360px the category
+            trigger and the sort Select were sharing one cramped line. */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
             <CategoryMultiSelect
               categories={categories}
               selected={selectedCategories}
@@ -160,7 +164,7 @@ export function MultiStoreFilters({ categories }: MultiStoreFiltersProps) {
                   toolbars read as one component: bare shadcn defaults made this
                   dropdown lighter than /search's. */}
               <SelectTrigger
-                className="flex-1 min-w-0 sm:flex-none sm:w-[190px] bg-card border-border text-foreground font-bold text-sm"
+                className="w-full min-w-0 sm:w-[190px] bg-card border-border text-foreground font-bold text-sm"
                 aria-label="Razvrsti"
               >
                 <SelectValue />
@@ -183,7 +187,7 @@ export function MultiStoreFilters({ categories }: MultiStoreFiltersProps) {
             </Select>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 self-end sm:self-auto">
             <button
               type="button"
               onClick={() => commit({ view: "grid" }, false)}
@@ -198,13 +202,10 @@ export function MultiStoreFilters({ categories }: MultiStoreFiltersProps) {
                 // breakpoint the results themselves switch at. A flat
                 // `view === "grid" ? ON : OFF` left BOTH icons dark on arrival,
                 // even though the grid is what renders. Mirrors SearchFilters.
-                view === null && [
-                  TOGGLE_OFF,
-                  "sm:bg-card sm:text-primary sm:border-primary/30",
-                ],
+                view === null && TOGGLE_GRID_UNSET,
               )}
             >
-              <LayoutGrid className="size-5" />
+              <LayoutGrid className="size-4 sm:size-5" />
             </button>
             <button
               type="button"
@@ -217,13 +218,10 @@ export function MultiStoreFilters({ categories }: MultiStoreFiltersProps) {
                 view === "grid" && TOGGLE_OFF,
                 // The inverse of the grid button: rows are what CSS renders
                 // below sm, so this reads active there and inactive above.
-                view === null && [
-                  TOGGLE_ON,
-                  "sm:bg-transparent sm:text-muted-foreground/40 sm:border-transparent sm:hover:text-primary",
-                ],
+                view === null && TOGGLE_LIST_UNSET,
               )}
             >
-              <List className="size-5" />
+              <List className="size-4 sm:size-5" />
             </button>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { ExternalLink } from "lucide-react";
 import { AddToCartButton } from "@/components/shared/AddToCartButton";
 import { CardDiscountMark } from "@/components/shared/CardDiscountMark";
 import {
+  formatDiscountPct,
   formatEurAmount,
   formatPricePerUnit,
   pricePerUnitAriaLabel,
@@ -154,7 +155,7 @@ export function StoreListingRow({
             </span>
             {onSale && (
               <span className="px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
-                -{Math.round(listing.discountPct!)}%
+                {formatDiscountPct(listing.discountPct!)}
               </span>
             )}
             {listing.cardDiscount && <CardDiscountMark className="self-center" />}

@@ -13,7 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { STORE_LOGOS, type StoreName } from "@/lib/store";
-import { formatEurAmount } from "@/lib/format";
+import { formatDiscountPct, formatEurAmount } from "@/lib/format";
 import { useCart } from "@/lib/cart";
 
 interface ProductCardProps {
@@ -111,9 +111,7 @@ export default function ProductCard({
                   : "bg-primary text-primary-foreground"
               }`}
             >
-              {badgeVariant === "increase"
-                ? `+${Math.round(Math.abs(discountPct))}%`
-                : `-${discountPct}%`}
+              {formatDiscountPct(discountPct)}
             </div>
           )}
 
