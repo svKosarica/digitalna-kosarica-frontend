@@ -115,3 +115,9 @@ export interface CategoryTreeNode {
  * rendering the placeholder and being visually indistinguishable from "all".
  */
 export const ALL_CATEGORIES_LABEL = "Vse kategorije";
+
+/**
+ * Counterpart to ALL_CATEGORIES_LABEL for the store filter. Both filters spell
+ * "no restriction" as an empty selection, so both need a label for it.
+ */
+export const ALL_STORES_LABEL = "Vse trgovine";
