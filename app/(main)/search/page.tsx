@@ -10,8 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatPricePerUnit, formatSize, pricePerUnitAriaLabel } from "@/lib/format";
 import { cn, normalizeStoreName, productCountLabel } from "@/lib/utils";
 import type { DiscountItem, SearchResponse } from "@/types/product.types";
-import type { FilterOption, SortOption } from "@/types/search.types";
-import { STORE_MAP, VALID_FILTERS, VALID_SORTS } from "@/types/search.types";
+import { resolveSort, STORE_MAP } from "@/types/search.types";
 import { SearchX } from "lucide-react";
 
 const PAGE_SIZE = 50;
@@ -149,13 +148,13 @@ export default async function SearchPage({ searchParams }: Props) {
   const params = await searchParams;
   const query = typeof params.q === "string" ? params.q.trim() : "";
 
-  const filter = VALID_FILTERS.includes(params.filter as FilterOption)
-    ? (params.filter as FilterOption)
-    : "NONE";
-
-  const order = VALID_SORTS.includes(params.order as SortOption)
-    ? (params.order as SortOption)
-    : "NONE";
+  // Absent params mean "untouched", which resolves to cheapest-first rather
+  // than the API's own order. SearchFilters resolves the same way, so the
+  // dropdown above the results always names the sort the results actually used.
+  const { filter, order } = resolveSort(
+    typeof params.filter === "string" ? params.filter : null,
+    typeof params.order === "string" ? params.order : null,
+  );
 
   const ALL_STORE_IDS = Object.keys(STORE_MAP).map(Number);
   const requestedStoreIds =

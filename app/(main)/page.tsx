@@ -1,18 +1,22 @@
-import {
-  getDiscounts,
-  getHighestPriceIncrease,
-  getMostPopular,
-} from "@/actions/home.actions";
+import { getDiscounts, getMostPopular } from "@/actions/home.actions";
+import { getMultiStoreProducts } from "@/actions/comparison.actions";
 import ProductScrollSection from "@/components/shared/ProductScrollSection";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { DEFAULT_MULTI_STORE_SORT } from "@/types/comparison.types";
 
 export default async function Page() {
-  const [discounts, popular, increases] = await Promise.all([
+  const [discounts, popular, multiStore] = await Promise.all([
     getDiscounts(),
     getMostPopular(),
-    getHighestPriceIncrease(),
+    // STORE_COUNT, not the widest-spread SAVINGS_PCT: the biggest spreads are
+    // artefacts of stale out-of-stock listings, whose savings badge is correctly
+    // suppressed — a savings rail that shows no savings. Widely-stocked products
+    // give a rail of real, buyable comparisons. Uses DEFAULT_MULTI_STORE_SORT
+    // rather than a literal, so the rail deliberately tracks the app default
+    // instead of pinning its own value that could silently drift from it.
+    getMultiStoreProducts({ size: 20, sort: DEFAULT_MULTI_STORE_SORT }),
   ]);
 
   return (
@@ -67,10 +71,10 @@ export default async function Page() {
       />
 
       <ProductScrollSection
-        title="Največje podražitve"
-        subtitle="Izdelki, ki so se najbolj podražili"
-        items={increases}
-        badgeVariant="increase"
+        title="Isti izdelek, več cen"
+        subtitle="Primerjajte cene med trgovinami"
+        multiStoreItems={multiStore.products}
+        moreHref="/primerjava"
       />
     </>
   );

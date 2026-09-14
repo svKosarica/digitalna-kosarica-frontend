@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, ArrowRight } from "lucide-react";
 import { ProductImage } from "@/components/shared/ProductImage";
 import { getProduct, getSimilarProducts } from "@/actions/product.actions";
 import {
@@ -177,6 +178,23 @@ export default async function ProductDetailPage({ params }: Props) {
                 </a>
               )}
             </div>
+
+            {/* product.id, NOT the storeProductId this route is keyed on — a
+                different identity space, and both are bare integers.
+                It is already in this payload, so the link costs no request.
+                A link, never a redirect: a shopper who opened one store's
+                listing asked for that listing. The comparison endpoint also
+                serves single-store articles, so this never 404s on a live
+                product — it lands on the storeCount === 1 state. */}
+            {product?.id != null && (
+              <Link
+                href={`/primerjava/${product.id}`}
+                className="group inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:gap-2.5 transition-all self-start"
+              >
+                Primerjaj ceno v drugih trgovinah
+                <ArrowRight className="size-4" />
+              </Link>
+            )}
           </div>
         </section>
 
